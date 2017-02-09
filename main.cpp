@@ -70,8 +70,12 @@ int main()
     // Game loop
     while (!glfwWindowShouldClose(window))
     {
+        glfwSetKeyCallback(window, key_callback);
         // Check if any events have been activated (key pressed, mouse moved etc.) and call corresponding response functions
         glfwPollEvents();
+
+
+
         // Swap the screen buffers
         glfwSwapBuffers(window);
     }
