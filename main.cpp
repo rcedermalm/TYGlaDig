@@ -70,6 +70,13 @@ int main()
     glfwGetFramebufferSize(window, &width, &height);
     glViewport(0, 0, width, height);
 
+
+    /****************** Shaders *************************/
+    // Declare shader and bind it
+   // ShaderProgram tempShader("../shaders/template.vert", "", "", "", "../shaders/template.frag");
+    //tempShader();
+
+
     // Game loop
     while (!glfwWindowShouldClose(window))
     {
