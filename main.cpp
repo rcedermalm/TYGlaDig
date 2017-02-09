@@ -74,7 +74,9 @@ int main()
         // Check if any events have been activated (key pressed, mouse moved etc.) and call corresponding response functions
         glfwPollEvents();
 
-
+        //Rendering commands here
+        glClearColor(0.2f, 0.7f, 0.3f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
 
         // Swap the screen buffers
         glfwSwapBuffers(window);
