@@ -11,6 +11,17 @@
 #include <glm.hpp>
 #include <gtc/matrix_transform.hpp>
 
+#include <rendering/ShaderProgram.hpp>
+#include <rendering/TextureManager.hpp>
+
+#include <common/Rotator.hpp>
+
+/*******************************************
+ ********** Function declarations **********
+ *******************************************/
+
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
+
 
 // Window dimensions
 const GLuint WIDTH = 800, HEIGHT = 600;
@@ -20,11 +31,9 @@ int main()
 {
     std::cout << "Starting GLFW context, OpenGL 3.3" << std::endl;
     // Init GLFW
-    //glfwInit();
     if(!glfwInit())
     {
         std::cout << "Failed to initialise GLFW" << std::endl;
-        glfwTerminate();
         return 1;
     }
 
@@ -64,7 +73,7 @@ int main()
     // Game loop
     while (!glfwWindowShouldClose(window))
     {
-        // Check if any events have been activiated (key pressed, mouse moved etc.) and call corresponding response functions
+        // Check if any events have been activated (key pressed, mouse moved etc.) and call corresponding response functions
         glfwPollEvents();
         // Swap the screen buffers
         glfwSwapBuffers(window);
@@ -73,4 +82,18 @@ int main()
     // Terminate GLFW, clearing any resources allocated by GLFW.
     glfwTerminate();
     return 0;
+}
+
+
+
+/*******************************************
+ ******** Function initialisation **********
+ *******************************************/
+
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
+{
+    // When a user presses the escape key, we set the WindowShouldClose property to true,
+    // closing the application
+    if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, GL_TRUE);
 }

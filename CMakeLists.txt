@@ -9,6 +9,7 @@ set(PROJECT_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
 set(PROJECT_EXTERNAL_DIR ${PROJECT_SOURCE_DIR}/external)
 set(PROJECT_SOURCES_DIR ${PROJECT_SOURCE_DIR}/src)
 set(PROJECT_LIB_DIR ${PROJECT_SOURCE_DIR}/lib)
+set(PROJECT_SHADERS_DIR ${PROJECT_SOURCE_DIR}/shaders)
 
 ### MAY BE THIS PART WE HAVE TO CHANGE TO MAKE IT WORK ON MAC TOO ###
 
@@ -90,7 +91,7 @@ set(EXTERNAL_INCLUDE_DIRS ${EXTERNAL_INCLUDE_DIRS} ${PROJECT_EXTERNAL_DIR}/glm)
 ####################################################
 
 # Lump all external- and project includes into one variable
-set(ALL_INCLUDES ${EXTERNAL_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR})
+set(ALL_INCLUDES ${EXTERNAL_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR} )
 
 # Set the include directories so that #include statements work
 include_directories(${ALL_INCLUDES})
