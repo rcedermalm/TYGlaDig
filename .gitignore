@@ -2,7 +2,7 @@
 
 *.iml
 build
-cmake-build-debug
+cmake-build-debug/
 
 ## Directory-based project format:
 .idea/
