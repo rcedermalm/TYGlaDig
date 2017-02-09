@@ -2,7 +2,7 @@
 32 bits compiler detected
 -- Could NOT find Vulkan (missing:  VULKAN_LIBRARY VULKAN_INCLUDE_DIR) 
 -- Using Win32 for window creation
-All include dirs: C:/Users/Rebecca/Documents/TNM085 MoS/TYGlaDig/external/glew-2.0.0/include;C:/Users/Rebecca/Documents/TNM085 MoS/TYGlaDig/include
+All include dirs: C:/Users/Rebecca/Documents/TNM085 MoS/TYGlaDig/external/glew-2.0.0/include;C:/Users/Rebecca/Documents/TNM085 MoS/TYGlaDig/external/glm;C:/Users/Rebecca/Documents/TNM085 MoS/TYGlaDig/include
 All include libraries: glu32;opengl32;glu32;C:/Users/Rebecca/Documents/TNM085 MoS/TYGlaDig/external/glew-2.0.0/lib/Release/Win32/glew32s.lib;glfw
 -- Configuring done
 -- Generating done

@@ -25,6 +25,7 @@
 				<Option compiler="gcc"/>
 				<Compiler>
 					<Add directory="C:/Users/Rebecca/Documents/TNM085 MoS/TYGlaDig/external/glew-2.0.0/include"/>
+					<Add directory="C:/Users/Rebecca/Documents/TNM085 MoS/TYGlaDig/external/glm"/>
 					<Add directory="C:/Users/Rebecca/Documents/TNM085 MoS/TYGlaDig/include"/>
 					<Add directory="C:/Users/Rebecca/Documents/TNM085 MoS/TYGlaDig/external/glfw-3.2.1/include"/>
 					<Add directory="c:\mingw\bin\../lib/gcc/mingw32/5.3.0/include"/>
@@ -50,6 +51,7 @@
 				<Option compiler="gcc"/>
 				<Compiler>
 					<Add directory="C:/Users/Rebecca/Documents/TNM085 MoS/TYGlaDig/external/glew-2.0.0/include"/>
+					<Add directory="C:/Users/Rebecca/Documents/TNM085 MoS/TYGlaDig/external/glm"/>
 					<Add directory="C:/Users/Rebecca/Documents/TNM085 MoS/TYGlaDig/include"/>
 					<Add directory="C:/Users/Rebecca/Documents/TNM085 MoS/TYGlaDig/external/glfw-3.2.1/include"/>
 					<Add directory="c:\mingw\bin\../lib/gcc/mingw32/5.3.0/include"/>

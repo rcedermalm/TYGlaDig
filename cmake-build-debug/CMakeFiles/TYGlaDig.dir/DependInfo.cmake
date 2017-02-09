@@ -11,6 +11,7 @@ set(CMAKE_CXX_COMPILER_ID "GNU")
 # The include file search paths:
 set(CMAKE_CXX_TARGET_INCLUDE_PATH
   "../external/glew-2.0.0/include"
+  "../external/glm"
   "../include"
   "../external/glfw-3.2.1/include"
   )

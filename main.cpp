@@ -7,6 +7,10 @@
 // GLFW
 #include <GLFW/glfw3.h>
 
+//GLM
+#include <glm.hpp>
+#include <gtc/matrix_transform.hpp>
+
 
 // Window dimensions
 const GLuint WIDTH = 800, HEIGHT = 600;

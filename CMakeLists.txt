@@ -17,12 +17,16 @@ if (CMAKE_SIZEOF_VOID_P EQUAL 8)
     MESSAGE( "64 bits compiler detected")
     SET(EX_PLATFORM 64)
     SET(EX_PLATFORM_NAME "x64")
-    set(GLEW_LIB_DIR ${PROJECT_EXTERNAL_DIR}/glew-2.0.0/lib/Release/x64)
+        if(MINGW)
+            set(GLEW_LIB_DIR ${PROJECT_EXTERNAL_DIR}/glew-2.0.0/lib/Release/x64)
+        endif(MINGW)
 else (CMAKE_SIZEOF_VOID_P EQUAL 8)
     MESSAGE( "32 bits compiler detected")
     SET(EX_PLATFORM 32)
     SET(EX_PLATFORM_NAME "x86")
-    set(GLEW_LIB_DIR ${PROJECT_EXTERNAL_DIR}/glew-2.0.0/lib/Release/Win32)
+    if(MINGW)
+        set(GLEW_LIB_DIR ${PROJECT_EXTERNAL_DIR}/glew-2.0.0/lib/Release/Win32)
+    endif(MINGW)
 endif (CMAKE_SIZEOF_VOID_P EQUAL 8)
 
 #######################################################################
@@ -54,9 +58,8 @@ find_package(OpenGL REQUIRED)
 set(ALL_LIBRARIES ${ALL_LIBRARIES} ${OPENGL_LIBRARIES})
 set(ALL_LIBRARIES ${ALL_LIBRARIES} ${OPENGL_glu_LIBRARY})
 
-
 ### GLEW on Windows
-if (MINGW)
+if(MINGW)
     set(GLEW_INCLUDE_DIR ${PROJECT_EXTERNAL_DIR}/glew-2.0.0/include)
     set(GLEW_LIBRARIES ${GLEW_LIB_DIR}/glew32s.lib )
     set(EXTERNAL_INCLUDE_DIRS ${EXTERNAL_INCLUDE_DIRS} ${GLEW_INCLUDE_DIR})
@@ -69,6 +72,9 @@ set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 add_subdirectory(${PROJECT_EXTERNAL_DIR}/glfw-3.2.1/)
 set(ALL_LIBRARIES ${ALL_LIBRARIES} glfw)
+
+### GLM ###
+set(EXTERNAL_INCLUDE_DIRS ${EXTERNAL_INCLUDE_DIRS} ${PROJECT_EXTERNAL_DIR}/glm)
 
 ####################################################
 ###### Include directories, add executables ########
