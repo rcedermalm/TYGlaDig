@@ -23,10 +23,10 @@ int main()
     //glfwInit();
     if(!glfwInit())
     {
-      fprintf(stderr, "Failed to initialize GLFW!\n");
-      return 1;
+        std::cout << "Failed to initialise GLFW" << std::endl;
+        glfwTerminate();
+        return 1;
     }
-    fprintf(stderr, "Initialize GLFW!\n");
 
     // Set all the required options for GLFW
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
