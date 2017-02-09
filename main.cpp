@@ -11,10 +11,6 @@
 #include <glm.hpp>
 #include <gtc/matrix_transform.hpp>
 
-#include <rendering/ShaderProgram.hpp>
-#include <rendering/TextureManager.hpp>
-
-#include <common/Rotator.hpp>
 
 /*******************************************
  ********** Function declarations **********
@@ -69,12 +65,6 @@ int main()
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
     glViewport(0, 0, width, height);
-
-
-    /****************** Shaders *************************/
-    // Declare shader and bind it
-   // ShaderProgram tempShader("../shaders/template.vert", "", "", "", "../shaders/template.frag");
-    //tempShader();
 
 
     // Game loop
