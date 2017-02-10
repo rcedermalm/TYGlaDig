@@ -101,7 +101,7 @@ message( "All include dirs: ${ALL_INCLUDES}")
 file(GLOB_RECURSE PROJECT_CPP_FILES ${PROJECT_SOURCES_DIR}/*.cpp)
 
 # Adds executable files
-set(SOURCE_FILES main.cpp ${PROJECT_CPP_FILES})
+set(SOURCE_FILES main.cpp ${PROJECT_CPP_FILES} include/ShaderProgram.hpp include/FileReader.hpp)
 add_executable(TYGlaDig ${SOURCE_FILES})
 
 # Links libraries
