@@ -3,15 +3,15 @@ project(TYGlaDig)
 
 set(CMAKE_CXX_STANDARD 11)
 
+## If we want some cmake modules
+set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+
 ## Set name of folders that will be in use
 set(PROJECT_BUILD_DIR ${PROJECT_SOURCE_DIR}/build)
 set(PROJECT_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
 set(PROJECT_EXTERNAL_DIR ${PROJECT_SOURCE_DIR}/external)
 set(PROJECT_SOURCES_DIR ${PROJECT_SOURCE_DIR}/src)
 set(PROJECT_LIB_DIR ${PROJECT_SOURCE_DIR}/lib)
-
-
-### MAY BE THIS PART WE HAVE TO CHANGE TO MAKE IT WORK ON MAC TOO ###
 
 # 32bit or 64bit
 if (CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -75,6 +75,12 @@ if(MINGW)
     set(ALL_LIBRARIES ${ALL_LIBRARIES} ${GLEW_LIBRARIES})
 endif (MINGW)
 
+### SOIL ###
+find_package(SOIL REQUIRED)
+set(ALL_LIBRARIES ${ALL_LIBRARIES} ${SOIL_LIBRARY})
+set(EXTERNAL_INCLUDE_DIRS ${EXTERNAL_INCLUDE_DIRS} ${SOIL_INCLUDE_DIR})
+
+
 ### GLFW ###
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
@@ -85,13 +91,14 @@ set(ALL_LIBRARIES ${ALL_LIBRARIES} glfw)
 ### GLM ###
 set(EXTERNAL_INCLUDE_DIRS ${EXTERNAL_INCLUDE_DIRS} ${PROJECT_EXTERNAL_DIR}/glm)
 
+
 ####################################################
 ###### Include directories, add executables ########
 ######          and link libraries          ########
 ####################################################
 
 # Lump all external- and project includes into one variable
-set(ALL_INCLUDES ${EXTERNAL_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR} )
+set(ALL_INCLUDES ${EXTERNAL_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR} ${CMAKE_MODULE_PATH})
 
 # Set the include directories so that #include statements work
 include_directories(${ALL_INCLUDES})
@@ -101,7 +108,7 @@ message( "All include dirs: ${ALL_INCLUDES}")
 file(GLOB_RECURSE PROJECT_CPP_FILES ${PROJECT_SOURCES_DIR}/*.cpp)
 
 # Adds executable files
-set(SOURCE_FILES main.cpp ${PROJECT_CPP_FILES} include/ShaderProgram.hpp include/FileReader.hpp)
+set(SOURCE_FILES main.cpp ${PROJECT_CPP_FILES} include/ShaderProgram.hpp include/FileReader.hpp include/Camera.h include/Particle.h src/Particle.cpp)
 add_executable(TYGlaDig ${SOURCE_FILES})
 
 # Links libraries
