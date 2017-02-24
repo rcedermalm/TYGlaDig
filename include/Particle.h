@@ -20,18 +20,20 @@
 class Particle{
 
 private:
-    float mass;
+    GLfloat mass;
     glm::vec3 position;
     glm::vec3 velocity;
     glm::vec3 acceleration;
 
 public:
-    Particle(float theMass, glm::vec3 thePosition);
-    float getMass();
+    Particle(GLfloat theMass, glm::vec3 thePosition);
+
+    GLfloat getMass();
     glm::vec3 getPos();
     glm::vec3 getVel();
     glm::vec3 getAcc();
-    void setMass(float newMass);
+
+    void setMass(GLfloat newMass);
     void setPos(glm::vec3 newPosition);
     void setVel(glm::vec3 newVelocity);
     void setAcc(glm::vec3 newAcceleration);

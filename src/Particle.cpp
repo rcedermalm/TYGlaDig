@@ -4,14 +4,14 @@
 
 #include "Particle.h"
 
-Particle::Particle(float theMass, glm::vec3 thePosition){
+Particle::Particle(GLfloat theMass, glm::vec3 thePosition){
     mass = theMass;
     position = thePosition;
-    velocity = {0.0f, 0.0f, 0.0f};
+    velocity = glm::vec3{0.0f, 0.0f, 0.0f};
     acceleration = glm::vec3(0.0f,0.0f,0.0f);
 };
 
-float Particle::getMass(){
+GLfloat Particle::getMass(){
     return mass;
 }
 
@@ -27,7 +27,7 @@ glm::vec3 Particle::getAcc(){
     return acceleration;
 }
 
-void Particle::setMass(float newMass) {
+void Particle::setMass(GLfloat newMass) {
     mass = newMass;
 }
 
