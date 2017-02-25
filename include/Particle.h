@@ -25,6 +25,7 @@ private:
     glm::vec3 velocity;
     glm::vec3 acceleration;
 
+
 public:
     Particle(GLfloat theMass, glm::vec3 thePosition);
 
