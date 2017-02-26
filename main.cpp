@@ -21,8 +21,6 @@
 #include "Camera.h"
 #include "Particle.h"
 
-#define ARRAY_SIZE(array) (sizeof((array))/sizeof((array[0])))
-
 /*******************************************
  ****** FUNCTION/VARIABLE DECLARATIONS *****
  *******************************************/
@@ -49,8 +47,6 @@ void do_movement();
 
 glm::vec3 theSpringForce(Particle p1, Particle p2, float L0, float k);
 glm::vec3 theDampForce(Particle p1, Particle p2, float b);
-
-bool calcvelocity = false;
 glm::vec3 RungeKuttaForVel(Particle p, float h);
 glm::vec3 RungeKuttaForPosDiff(Particle p, float h);
 
@@ -104,40 +100,45 @@ int main()
     /*************** Callback functions ****************/
     // Decides what should be done when a key is pressed
     glfwSetKeyCallback(window, key_callback);
+
     // Decides what should be done when the mouse is in use
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetScrollCallback(window, scroll_callback);
 
     /************** Declare variables **************/
-    GLfloat k = 1.0f;
-    GLfloat b = 0.1f;
-    GLfloat L0 = 0.2f;
-    GLfloat L0cross = sqrtf((float)pow(L0,2)*2);
-    GLfloat m = 1.0f;
-    GLfloat h = 0.005f;
+    GLfloat k = 1.0f; // spring constant
+    GLfloat b = 0.1f; // damping constant
+    GLfloat L0 = 0.2f; // rest length of the structural springs
+    GLfloat L0cross = sqrtf((float)pow(L0,2)*2); // rest length of the shear springs
+    GLfloat m = 1.0f; // mass of the particles
+    GLfloat h = 0.005f; // length of step for RK4 calculations
 
-    //To keep track of the differences between positions (for the loop)
+    // Create all the particles and put them in a grid
+    const GLuint clothWidth = 3, clothHeight = 3;
+    Particle theParticles[clothHeight][clothWidth];
 
-    Particle theParticles[] = {
-            Particle(m, glm::vec3(0.0f, 0.0f, 0.0f)), // Particle 0
-            Particle(m, glm::vec3(  L0, 0.0f, 0.0f)), // Particle 1
-            Particle(m, glm::vec3(  L0,   L0, 0.0f)), // Particle 2
-            Particle(m, glm::vec3(0.0f,   L0, 0.0f)), // Particle 3
-            Particle(m, glm::vec3( -L0,   L0, 0.0f)), // Particle 4
-            Particle(m, glm::vec3( -L0, 0.0f, 0.0f)), // Particle 5
-            Particle(m, glm::vec3( -L0,  -L0, 0.0f)), // Particle 6
-            Particle(m, glm::vec3(0.0f,  -L0, 0.0f)), // Particle 7
-            Particle(m, glm::vec3(  L0+0.15f,  -L0-0.15f, 0.0f))  // Particle 8
-    };
+    theParticles[0][0] = Particle(m, glm::vec3( -L0,   L0, 0.0f)); // Top-left
+    theParticles[0][1] = Particle(m, glm::vec3(0.0f,   L0, 0.0f)); // Top-mid
+    theParticles[0][2] = Particle(m, glm::vec3(  L0,   L0, 0.0f)); // Top-right
+    theParticles[1][0] = Particle(m, glm::vec3( -L0, 0.0f, 0.0f)); // Mid-left
+    theParticles[1][1] = Particle(m, glm::vec3(0.0f, 0.0f, 0.0f)); // Mid-mid
+    theParticles[1][2] = Particle(m, glm::vec3(  L0, 0.0f, 0.0f)); // Mid-right
+    theParticles[2][0] = Particle(m, glm::vec3( -L0,  -L0, 0.0f)); // Bottom-left
+    theParticles[2][1] = Particle(m, glm::vec3(0.0f,  -L0, 0.0f)); // Bottom-mid
+    theParticles[2][2] = Particle(m, glm::vec3(  L0,  -L0, 0.0f)); // Bottom-right
 
-    GLuint nrOfParticles = ARRAY_SIZE(theParticles);
-    glm::vec3 newCubePositions[nrOfParticles];
-   /* Particle new1 = Particle(m, glm::vec3(  -0.2f, 0.0f, 0.0f) );
-    Particle new2 = Particle(m, glm::vec3(   L0, 0.0f, 0.0f) );
-    Particle new3 = Particle(m, glm::vec3(   L0, L0,   0.0f) );
-    Particle new4 = Particle(m, glm::vec3( 0.0f, L0,   0.0f) );
-*/
-    //CUBE
+    // Create a grid with the positions in the beginning and initialize a grid for
+    // calculating the new positions (calculations for that one are made in the render loop)
+    glm::vec3 cubePositions[clothHeight][clothWidth];
+    glm::vec3 newCubePositions[clothHeight][clothWidth];
+    for(GLuint i = 0; i < clothHeight; i++){
+        for(GLuint j = 0; j < clothWidth; j++){
+            cubePositions[i][j] = theParticles[i][j].getPos();
+            newCubePositions[i][j] = glm::vec3(0.0f, 0.0f, 0.0f);
+        }
+    }
+
+    // Create a cube
     GLfloat vertices[] = {
             -0.01f, -0.01f, -0.01f,  1.0f, 1.0f, 1.0f,
              0.01f, -0.01f, -0.01f,  1.0f, 1.0f, 1.0f,
@@ -181,30 +182,11 @@ int main()
             -0.01f,  0.01f,  0.01f,  1.0f, 1.0f, 1.0f,
             -0.01f,  0.01f, -0.01f,  1.0f, 1.0f, 1.0f,
     };
-/*
-    glm::vec3 cubePositions[] = {
-            new1.getPos(),
-            new2.getPos(),
-            new3.getPos(),
-            new4.getPos()
-    };
-*/
-    glm::vec3 cubePositions[] = {
-            theParticles[0].getPos(),
-            theParticles[1].getPos(),
-            theParticles[2].getPos(),
-            theParticles[3].getPos(),
-            theParticles[4].getPos(),
-            theParticles[5].getPos(),
-            theParticles[6].getPos(),
-            theParticles[7].getPos(),
-            theParticles[8].getPos()
-    };
 
     /***************** Vertex Buffer Objects (VBO) ******************/
     GLuint VBO;
     glGenBuffers(1, &VBO); // Create Buffer ID
-    glBindBuffer(GL_ARRAY_BUFFER, VBO); //Bind a buffer to the ID
+    glBindBuffer(GL_ARRAY_BUFFER, VBO); // Bind a buffer to the ID
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); // Copies the vertices data into the buffer
 
     /***************** Vertex Array Objects (VAO) ******************/
@@ -212,7 +194,7 @@ int main()
     glGenVertexArrays(1, &VAO);
     glBindVertexArray(VAO);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0); //Positions
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0); // Positions
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat))); // Colors
 
     // Enable all VAOs
@@ -223,7 +205,7 @@ int main()
     glBindVertexArray(0);
 
     /***************** Shaders ********************/
-    // Build and compile our shader program
+    // Build and compile the shader program
     std::string vertexFilename = "../shaders/vertexShader.vert";
     std::string fragmentFilename = "../shaders/fragmentShader.frag";
     ShaderProgram theShaders(vertexFilename, "", "", "", fragmentFilename);
@@ -233,7 +215,10 @@ int main()
     GLint modelLoc = glGetUniformLocation(theShaders, "model");
 
 
+    /****************************************************/
     /******************* RENDER LOOP ********************/
+    /****************************************************/
+
     while (!glfwWindowShouldClose(window))
     {
         // Calculate deltatime of current frame
@@ -255,138 +240,74 @@ int main()
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
         /**************** RENDER STUFF ****************/
-        // Structural springs and dampers
-        glm::vec3 Fk01 = theSpringForce(theParticles[0], theParticles[1], L0, k);
-        glm::vec3 Fb01 = theDampForce(theParticles[0], theParticles[1], b);
-        glm::vec3 Fk12 = theSpringForce(theParticles[1], theParticles[2], L0, k);
-        glm::vec3 Fb12 = theDampForce(theParticles[1], theParticles[2], b);
-        glm::vec3 Fk32 = theSpringForce(theParticles[3], theParticles[2], L0, k);
-        glm::vec3 Fb32 = theDampForce(theParticles[3], theParticles[2], b);
-        glm::vec3 Fk03 = theSpringForce(theParticles[0], theParticles[3], L0, k);
-        glm::vec3 Fb03 = theDampForce(theParticles[0], theParticles[3], b);
-        glm::vec3 Fk43 = theSpringForce(theParticles[4], theParticles[3], L0, k);
-        glm::vec3 Fb43 = theDampForce(theParticles[4], theParticles[3], b);
-        glm::vec3 Fk54 = theSpringForce(theParticles[5], theParticles[4], L0, k);
-        glm::vec3 Fb54 = theDampForce(theParticles[5], theParticles[4], b);
-        glm::vec3 Fk50 = theSpringForce(theParticles[5], theParticles[0], L0, k);
-        glm::vec3 Fb50 = theDampForce(theParticles[5], theParticles[0], b);
-        glm::vec3 Fk65 = theSpringForce(theParticles[6], theParticles[5], L0, k);
-        glm::vec3 Fb65 = theDampForce(theParticles[6], theParticles[5], b);
-        glm::vec3 Fk67 = theSpringForce(theParticles[6], theParticles[7], L0, k);
-        glm::vec3 Fb67 = theDampForce(theParticles[6], theParticles[7], b);
-        glm::vec3 Fk70 = theSpringForce(theParticles[7], theParticles[0], L0, k);
-        glm::vec3 Fb70 = theDampForce(theParticles[7], theParticles[0], b);
-        glm::vec3 Fk78 = theSpringForce(theParticles[7], theParticles[8], L0, k);
-        glm::vec3 Fb78 = theDampForce(theParticles[7], theParticles[8], b);
-        glm::vec3 Fk81 = theSpringForce(theParticles[8], theParticles[1], L0, k);
-        glm::vec3 Fb81 = theDampForce(theParticles[8], theParticles[1], b);
 
-        // Shear springs and dampers
-        glm::vec3 Fk02 = theSpringForce(theParticles[0], theParticles[2], L0cross, k);
-        glm::vec3 Fb02 = theDampForce(theParticles[0], theParticles[2], b);
-        glm::vec3 Fk13 = theSpringForce(theParticles[1], theParticles[3], L0cross, k);
-        glm::vec3 Fb13 = theDampForce(theParticles[1], theParticles[3], b);
-        glm::vec3 Fk53 = theSpringForce(theParticles[5], theParticles[3], L0cross, k);
-        glm::vec3 Fb53 = theDampForce(theParticles[5], theParticles[3], b);
-        glm::vec3 Fk04 = theSpringForce(theParticles[0], theParticles[4], L0cross, k);
-        glm::vec3 Fb04 = theDampForce(theParticles[0], theParticles[4], b);
-        glm::vec3 Fk60 = theSpringForce(theParticles[6], theParticles[0], L0cross, k);
-        glm::vec3 Fb60 = theDampForce(theParticles[6], theParticles[0], b);
-        glm::vec3 Fk75 = theSpringForce(theParticles[7], theParticles[5], L0cross, k);
-        glm::vec3 Fb75 = theDampForce(theParticles[7], theParticles[5], b);
-        glm::vec3 Fk71 = theSpringForce(theParticles[7], theParticles[1], L0cross, k);
-        glm::vec3 Fb71 = theDampForce(theParticles[7], theParticles[1], b);
-        glm::vec3 Fk80 = theSpringForce(theParticles[8], theParticles[0], L0cross, k);
-        glm::vec3 Fb80 = theDampForce(theParticles[8], theParticles[0], b);
+        glm::vec3 gravity = glm::vec3(0.0f, -0.0098f, 0.0f);
 
-        // Bend springs and dampers
-        glm::vec3 Fk42 = theSpringForce(theParticles[4], theParticles[2], 2.0f*L0, k);
-        glm::vec3 Fb42 = theDampForce(theParticles[4], theParticles[2], b);
-        glm::vec3 Fk51 = theSpringForce(theParticles[5], theParticles[1], 2.0f*L0, k);
-        glm::vec3 Fb51 = theDampForce(theParticles[5], theParticles[1], b);
-        glm::vec3 Fk68 = theSpringForce(theParticles[6], theParticles[8], 2.0f*L0, k);
-        glm::vec3 Fb68 = theDampForce(theParticles[6], theParticles[8], b);
-        glm::vec3 Fk64 = theSpringForce(theParticles[6], theParticles[4], 2.0f*L0, k);
-        glm::vec3 Fb64 = theDampForce(theParticles[6], theParticles[4], b);
-        glm::vec3 Fk73 = theSpringForce(theParticles[7], theParticles[3], 2.0f*L0, k);
-        glm::vec3 Fb73 = theDampForce(theParticles[7], theParticles[3], b);
-        glm::vec3 Fk82 = theSpringForce(theParticles[8], theParticles[2], 2.0f*L0, k);
-        glm::vec3 Fb82 = theDampForce(theParticles[8], theParticles[2], b);
+        // Calculate the forces acting on the particles
+        for(GLuint i = 0; i < clothHeight; i++){
+            for(GLuint j = 0; j < clothWidth; j++){
+                glm::vec3 theForce = glm::vec3(0.0f, 0.0f, 0.0f);
 
-        // Calculate and set the acceleration of the particles
-        theParticles[0].setAcc((1/m)*(+Fk03-Fb03+Fk01-Fb01-Fk50+Fb50-Fk70+Fb70+Fk13-Fb13+Fk04-Fb04-Fk60+Fb60-Fk80+Fb80));
-        theParticles[1].setAcc((1/m)*(-Fk01+Fb01+Fk12-Fb12-Fk81+Fb81+Fk13-Fb13-Fk71+Fb71-Fk51+Fb51));
-        //theParticles[2].setAcc((1/m)*(-Fk12+Fb12-Fk32+Fb32-Fk13+Fb13-Fk42+Fb42-Fk82+Fb82));
-        theParticles[3].setAcc((1/m)*(+Fk32-Fb32-Fk03+Fb03-Fk43+Fb43-Fk13+Fb13-Fk53+Fb53-Fk73+Fb73));
-        //theParticles[4].setAcc((1/m)*(+Fk43-Fb43-Fk54+Fb54-Fk04+Fb04+Fk42-Fb42-Fk64+Fb64));
-        theParticles[5].setAcc((1/m)*(+Fk50-Fb50+Fk54-Fb54-Fk65+Fb65+Fk53-Fb53-Fk75+Fb75+Fk51-Fb51));
-        theParticles[6].setAcc((1/m)*(+Fk67-Fb67+Fk65-Fb65+Fk60-Fb60+Fk68-Fb68+Fk64-Fb64));
-        theParticles[7].setAcc((1/m)*(+Fk78-Fb78+Fk70-Fb70-Fk67+Fb67+Fk71-Fb71+Fk75-Fb75+Fk73-Fb73));
-        theParticles[8].setAcc((1/m)*(+Fk81-Fb81-Fk78+Fb78+Fk80-Fb80-Fk68+Fb68+Fk82-Fb82));
-        theParticles[2].setAcc(glm::vec3(0.0f,0.0f,0.0f));
-        theParticles[4].setAcc(glm::vec3(0.0f,0.0f,0.0f));
+                // Structural springs and dampers
+                if(j!=clothWidth-1){theForce += theSpringForce(theParticles[i][j], theParticles[i][j+1], L0, k);
+                    theForce += (-1.0f) * theDampForce(theParticles[i][j], theParticles[i][j+1], b);}
+                if(i!=0){ theForce += theSpringForce(theParticles[i][j], theParticles[i-1][j], L0, k);
+                    theForce += (-1.0f) * theDampForce(theParticles[i][j], theParticles[i-1][j], b);}
+                if(j!=0){ theForce += (-1.0f) * theSpringForce(theParticles[i][j-1], theParticles[i][j], L0, k);
+                    theForce += theDampForce(theParticles[i][j-1], theParticles[i][j], b);}
+                if(i!=clothHeight-1){ theForce += (-1.0f) * theSpringForce(theParticles[i+1][j], theParticles[i][j], L0, k);
+                    theForce += theDampForce(theParticles[i+1][j], theParticles[i][j], b);}
 
-        /*// Calculate the spring and the damp forces
-        glm::vec3 Fk1 = theSpringForce(new1, new2, L0, k);
-        glm::vec3 Fb1 = theDampForce(new1, new2, b);
-        glm::vec3 Fk2 = theSpringForce(new2, new3, L0, k);
-        glm::vec3 Fb2 = theDampForce(new2, new3, b);
-        glm::vec3 Fk3 = theSpringForce(new3, new4, L0, k);
-        glm::vec3 Fb3 = theDampForce(new3, new4, b);
-        glm::vec3 Fk4 = theSpringForce(new4, new1, L0, k);
-        glm::vec3 Fb4 = theDampForce(new4, new1, b);
+                // Shear springs and dampers
+                if(i!=0 && j!=clothWidth-1){ theForce += theSpringForce(theParticles[i][j], theParticles[i-1][j+1], L0cross, k);
+                    theForce += (-1.0f) * theDampForce(theParticles[i][j], theParticles[i-1][j+1], b);}
+                if(i!=0 && j!=0){ theForce += theSpringForce(theParticles[i][j], theParticles[i-1][j-1], L0cross, k);
+                    theForce += (-1.0f) * theDampForce(theParticles[i][j], theParticles[i-1][j-1], b);}
+                if(i!= clothHeight-1 && j!= 0){ theForce += (-1.0f) * theSpringForce(theParticles[i+1][j-1], theParticles[i][j], L0cross, k);
+                    theForce += theDampForce(theParticles[i+1][j-1], theParticles[i][j], b);}
+                if(i!= clothHeight-1 && j!=clothWidth-1){ theForce += (-1.0f) * theSpringForce(theParticles[i+1][j+1], theParticles[i][j], L0cross, k);
+                    theForce += theDampForce(theParticles[i+1][j+1], theParticles[i][j], b);}
 
-        glm::vec3 Fk13 = theSpringForce(new1, new3, L0cross, k);
-        glm::vec3 Fb13 = theDampForce(new1, new3, b);
-        glm::vec3 Fk24 = theSpringForce(new2, new4, L0cross, k);
-        glm::vec3 Fb24 = theDampForce(new2, new4, b);
+                // Bend springs and dampers
+                if(j<clothWidth-2){ theForce += theSpringForce(theParticles[i][j], theParticles[i][j+2], (2.0f)*L0, k);
+                    theForce += (-1.0f) * theDampForce(theParticles[i][j], theParticles[i][j+2], b);}
+                if(i>2){ theForce += theSpringForce(theParticles[i][j], theParticles[i-2][j], (2.0f)*L0, k);
+                    theForce += (-1.0f) * theDampForce(theParticles[i][j], theParticles[i-2][j], b);}
+                if(j>2){ theForce += (-1.0f) * theSpringForce(theParticles[i][j-2], theParticles[i][j], (2.0f)*L0, k);
+                    theForce += theDampForce(theParticles[i][j-2], theParticles[i][j], b);}
+                if(i<clothHeight-2){ theForce += (-1.0f) * theSpringForce(theParticles[i+2][j], theParticles[i][j], (2.0f)*L0, k);
+                    theForce += theDampForce(theParticles[i+2][j], theParticles[i][j], b);}
 
-        // Calculate and set the acceleration of the particles
-        new1.setAcc((1/m)*(-Fk4+Fb4+Fk1-Fb1+Fk13-Fb13));
-        new2.setAcc((1/m)*(-Fk1+Fb1+Fk2-Fb2+Fk24-Fb24));
-        new3.setAcc((1/m)*(-Fk2+Fb2+Fk3-Fb3-Fk13+Fb13));
-        new4.setAcc((1/m)*(-Fk3+Fb3+Fk4-Fb4-Fk24+Fb24));
-        */
-        /*for(GLuint i = 0; i < nrOfParticles; i++){
-            theParticles[i].setPos(RungeKuttaForPosDiff(theParticles[i],h)+theParticles[i].getPos());
-            newCubePositions[i] += RungeKuttaForPosDiff(theParticles[i],h);
-            theParticles[i].setVel(RungeKuttaForVel(theParticles[i],h));
-        }*/
+                // Add gravity
+                theForce += gravity;
 
-/*        // Calculate and set the positions of the particles
-        new1.setPos(RungeKuttaForPosDiff(new1,h) + new1.getPos());
-        new2.setPos(RungeKuttaForPosDiff(new2,h) + new2.getPos());
-        new3.setPos(RungeKuttaForPosDiff(new3,h) + new3.getPos());
-        new4.setPos(RungeKuttaForPosDiff(new4,h) + new4.getPos());
+                // Set the current acceleration of the particle
+                theParticles[i][j].setAcc((1/m)*(theForce));
+            }
+        }
 
-        // Update the sum of the differences
-        newCubePositions[0] += RungeKuttaForPosDiff(new1, h);
-        newCubePositions[1] += RungeKuttaForPosDiff(new2, h);
-        newCubePositions[2] += RungeKuttaForPosDiff(new3, h);
-        newCubePositions[3] += RungeKuttaForPosDiff(new4, h);
+        // MUST HAVE if gravity is involved (otherwise everything falls down)
+        theParticles[0][0].setAcc(glm::vec3(0.0f,0.0f,0.0f));
+        theParticles[0][2].setAcc(glm::vec3(0.0f,0.0f,0.0f));
 
-        // Calculate and set the velocities of the particles
-        new1.setVel(RungeKuttaForVel(new1, h));
-        new2.setVel(RungeKuttaForVel(new2, h));
-        new3.setVel(RungeKuttaForVel(new3, h));
-        new4.setVel(RungeKuttaForVel(new4, h));
-*/
-        //Draw cubes
+        // Draw cubes
         glBindVertexArray(VAO);  // Bind VAO
-        for(GLuint i = 0; i < nrOfParticles; i++)
-        {
-            theParticles[i].setPos(RungeKuttaForPosDiff(theParticles[i],h)+theParticles[i].getPos());
-            newCubePositions[i] += RungeKuttaForPosDiff(theParticles[i],h);
-            theParticles[i].setVel(RungeKuttaForVel(theParticles[i],h));
+        for(GLuint i = 0; i < clothHeight; i++) {
+            for(GLuint j = 0; j < clothWidth;j++) {
+                // Set the new positions and velocities of the particles
+                theParticles[i][j].setPos(RungeKuttaForPosDiff(theParticles[i][j], h) + theParticles[i][j].getPos());
+                newCubePositions[i][j] += RungeKuttaForPosDiff(theParticles[i][j], h);
+                theParticles[i][j].setVel(RungeKuttaForVel(theParticles[i][j], h));
 
-            //Calculate the model matrix for each object and pass it to shader before drawing
-            glm::mat4 model;
-            model = glm::translate(model, cubePositions[i]);
-            glm::vec3 theTransVec = (newCubePositions[i]);
-            model = glm::translate(model, theTransVec);
-            glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+                // Calculate the model matrix for each object and pass it to shader before drawing
+                glm::mat4 model;
+                model = glm::translate(model, cubePositions[i][j]);
+                glm::vec3 theTransVec = (newCubePositions[i][j]);
+                model = glm::translate(model, theTransVec);
+                glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 
-            glDrawArrays(GL_TRIANGLES, 0, 36);
+                glDrawArrays(GL_TRIANGLES, 0, 36);
+            }
         }
         glBindVertexArray(0); // Unbind VAO
 
@@ -456,6 +377,7 @@ void do_movement()
         camera.ProcessKeyboard(RIGHT,deltaTime);
 }
 
+// Calculates the spring force acting on a particle
 glm::vec3 theSpringForce(Particle p1, Particle p2, GLfloat L0, GLfloat k){
     GLfloat lengthBParticles = sqrtf(GLfloat(pow(p2.getPos().x-p1.getPos().x,2) + pow(p2.getPos().y-p1.getPos().y,2) + pow(p2.getPos().z-p1.getPos().z,2)));
     glm::vec3 length = p2.getPos() - p1.getPos();
@@ -463,11 +385,13 @@ glm::vec3 theSpringForce(Particle p1, Particle p2, GLfloat L0, GLfloat k){
     return Fk;
 }
 
+// Calculates the damping force acting on a particle
 glm::vec3 theDampForce(Particle p1, Particle p2, GLfloat b){
     glm::vec3 Fb = b * (p1.getVel() - p2.getVel());
     return Fb;
 }
 
+// Calculate the new velocity using RK4
 glm::vec3 RungeKuttaForVel(Particle p, GLfloat h){
 
     glm::vec3 next, k1, k2, k3, k4;
@@ -481,6 +405,7 @@ glm::vec3 RungeKuttaForVel(Particle p, GLfloat h){
     return next;
 }
 
+// Calculate the difference between the new position and the old one using RK4
 glm::vec3 RungeKuttaForPosDiff(Particle p, GLfloat h){
     glm::vec3 next, k1, k2, k3, k4;
     k1 = p.getVel();
@@ -490,4 +415,3 @@ glm::vec3 RungeKuttaForPosDiff(Particle p, GLfloat h){
     next = (h/6.0f)*(k1 + 2.0f*k2 + 2.0f*k3 + k4);
     return next;
 }
-

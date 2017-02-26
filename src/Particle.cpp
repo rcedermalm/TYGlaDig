@@ -11,6 +11,7 @@ Particle::Particle(GLfloat theMass, glm::vec3 thePosition){
     acceleration = glm::vec3(0.0f,0.0f,0.0f);
 };
 
+
 GLfloat Particle::getMass(){
     return mass;
 }

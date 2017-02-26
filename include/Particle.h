@@ -3,6 +3,7 @@
 //
 
 #include <iostream>
+#include <vector>
 
 // GLEW
 #define GLEW_STATIC
@@ -25,9 +26,9 @@ private:
     glm::vec3 velocity;
     glm::vec3 acceleration;
 
-
 public:
     Particle(GLfloat theMass, glm::vec3 thePosition);
+    Particle(){}
 
     GLfloat getMass();
     glm::vec3 getPos();
