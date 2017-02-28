@@ -108,24 +108,27 @@ int main()
     /************** Declare variables **************/
     GLfloat k = 1.0f; // spring constant
     GLfloat b = 0.1f; // damping constant
-    GLfloat L0 = 0.2f; // rest length of the structural springs
+    GLfloat L0 = 0.1f; // rest length of the structural springs
     GLfloat L0cross = sqrtf((float)pow(L0,2)*2); // rest length of the shear springs
     GLfloat m = 1.0f; // mass of the particles
-    GLfloat h = 0.005f; // length of step for RK4 calculations
+    GLfloat h = 0.007f; // length of step for RK4 calculations
 
     // Create all the particles and put them in a grid
-    const GLuint clothWidth = 3, clothHeight = 3;
+    const GLuint clothWidth = 5, clothHeight = 5;
     Particle theParticles[clothHeight][clothWidth];
 
-    theParticles[0][0] = Particle(m, glm::vec3( -L0,   L0, 0.0f)); // Top-left
-    theParticles[0][1] = Particle(m, glm::vec3(0.0f,   L0, 0.0f)); // Top-mid
-    theParticles[0][2] = Particle(m, glm::vec3(  L0,   L0, 0.0f)); // Top-right
-    theParticles[1][0] = Particle(m, glm::vec3( -L0, 0.0f, 0.0f)); // Mid-left
-    theParticles[1][1] = Particle(m, glm::vec3(0.0f, 0.0f, 0.0f)); // Mid-mid
-    theParticles[1][2] = Particle(m, glm::vec3(  L0, 0.0f, 0.0f)); // Mid-right
-    theParticles[2][0] = Particle(m, glm::vec3( -L0,  -L0, 0.0f)); // Bottom-left
-    theParticles[2][1] = Particle(m, glm::vec3(0.0f,  -L0, 0.0f)); // Bottom-mid
-    theParticles[2][2] = Particle(m, glm::vec3(  L0,  -L0, 0.0f)); // Bottom-right
+    float heightCounter = 3.0f;
+    for(GLuint i = 0; i < clothHeight; i++ ){
+        float widthCounter = -3.0f;
+        for(GLuint j = 0; j < clothWidth; j++){
+            theParticles[i][j] = Particle(m, glm::vec3(widthCounter*L0, heightCounter*L0, 0.0f));
+            widthCounter++;
+        }
+        heightCounter--;
+    }
+
+    //Just to move the particle in the right-bottom corner a bit more to the right and down so that the fabric moves
+    theParticles[clothHeight-1][clothWidth-1].setPos(theParticles[clothHeight-1][clothWidth-1].getPos() + glm::vec3(0.07f, -0.07f, 0.0f));
 
     // Create a grid with the positions in the beginning and initialize a grid for
     // calculating the new positions (calculations for that one are made in the render loop)
@@ -241,11 +244,15 @@ int main()
 
         /**************** RENDER STUFF ****************/
 
-        glm::vec3 gravity = glm::vec3(0.0f, -0.0098f, 0.0f);
+        glm::vec3 gravity = glm::vec3(0.0f, -0.00098f, 0.0f);
 
         // Calculate the forces acting on the particles
         for(GLuint i = 0; i < clothHeight; i++){
             for(GLuint j = 0; j < clothWidth; j++){
+
+                /** Kanske implementera att koden innanför for-loopen körs på GPU:n så att allt går fortare, kolla upp
+                 * OpenCL. Kan dock bli överkurs, möjligt att det bara räcker att sitta på en stationär dator.
+                 */
                 glm::vec3 theForce = glm::vec3(0.0f, 0.0f, 0.0f);
 
                 // Structural springs and dampers
@@ -279,16 +286,17 @@ int main()
                     theForce += theDampForce(theParticles[i+2][j], theParticles[i][j], b);}
 
                 // Add gravity
-                theForce += gravity;
+                //theForce += gravity;
 
                 // Set the current acceleration of the particle
                 theParticles[i][j].setAcc((1/m)*(theForce));
             }
         }
 
-        // MUST HAVE if gravity is involved (otherwise everything falls down)
-        theParticles[0][0].setAcc(glm::vec3(0.0f,0.0f,0.0f));
-        theParticles[0][2].setAcc(glm::vec3(0.0f,0.0f,0.0f));
+        /** Implementera så att partiklarna i de översta hörnen ([0][0] & [0][clothWidth-1]) sitter fast i två
+         * "krokar" (statiska partiklar som inte kan röra sig) om vi tänker oss att tyget ska hängas upp.
+         * Annars behövs det ej.
+         */
 
         // Draw cubes
         glBindVertexArray(VAO);  // Bind VAO
@@ -305,6 +313,12 @@ int main()
                 glm::vec3 theTransVec = (newCubePositions[i][j]);
                 model = glm::translate(model, theTransVec);
                 glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+
+                /** Kolla upp om det går att rendera linjer mellan varje partikel så att det blir mer tydligt hur tyget
+                 *  rör sig. Kolla även upp om det är möjligt att rendera så att tomrummen fylls, aka att det faktiskt
+                 *  ser ut som ett tyg och inte ett gridsystem.
+                 */
+
 
                 glDrawArrays(GL_TRIANGLES, 0, 36);
             }
