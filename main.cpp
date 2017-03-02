@@ -186,26 +186,64 @@ int main()
             -0.01f,  0.01f, -0.01f,  1.0f, 1.0f, 1.0f,
     };
 
+    std::vector<glm::vec3> vertexData;
+    for(int i = 0; i < clothHeight ; i++)
+    {
+        for(int j = 0; j < clothWidth; j++)
+        {
+            vertexData.push_back(theParticles[clothHeight][clothWidth].getPos());
+        }
+    }
+
     /***************** Vertex Buffer Objects (VBO) ******************/
-    GLuint VBO;
-    glGenBuffers(1, &VBO); // Create Buffer ID
-    glBindBuffer(GL_ARRAY_BUFFER, VBO); // Bind a buffer to the ID
+    GLuint VBO[2];  //Vi vill ha två stycken VB0s
+    GLuint VAO[2];
+    glGenVertexArrays(1, VAO);
+    glGenBuffers(1, VBO); // Create Buffer ID
+
+    glBindVertexArray(VAO[0]);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO[0]); // Bind a buffer to the ID
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); // Copies the vertices data into the buffer
-
-    /***************** Vertex Array Objects (VAO) ******************/
-    GLuint VAO;
-    glGenVertexArrays(1, &VAO);
-    glBindVertexArray(VAO);
-
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0); // Positions
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat))); // Colors
-
-    // Enable all VAOs
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
+    glBindVertexArray(0);
+
+    //Den andra VBO
+    glBindVertexArray(VAO[1]);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO[1]); // Bind a buffer to the ID
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertexData), &vertexData, GL_STATIC_DRAW); // Copies the vertices data into the buffer
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0); // Positions
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat))); // Colors
+    glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
+    glBindVertexArray(0);
+    //glBufferData(GL_ARRAY_BUFFER, sizeof(vertices),vertices, GL_STATIC_DRAW);       //Funkar det här för båda nu?
+
+    /***************** Vertex Array Objects (VAO) ******************/
+   // GLuint VAO[2];
+   // glGenVertexArrays(1, &VAO[0]);
+    //glBindVertexArray(VAO[0]);
+
+    //glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0); // Positions
+    //glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat))); // Colors
+
+    // Enable all VAOs
+    //glEnableVertexAttribArray(0);
+    //glEnableVertexAttribArray(1);
 
     // Unbind VAO
-    glBindVertexArray(0);
+  /*  glBindVertexArray(0);
+
+    //Den andra VAO
+    glGenVertexArrays(1, &VAO[1]);
+    glBindVertexArray(VAO[1]);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0); // Positions
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat))); // Colors
+    glEnableVertexAttribArray(0); // Enable all VAOs
+    glEnableVertexAttribArray(1);
+    glBindVertexArray(0);   // Unbind VAO */
 
     /***************** Shaders ********************/
     // Build and compile the shader program
@@ -299,7 +337,7 @@ int main()
          */
 
         // Draw cubes
-        glBindVertexArray(VAO);  // Bind VAO
+        glBindVertexArray(VAO[0]);  // Bind VAO
         for(GLuint i = 0; i < clothHeight; i++) {
             for(GLuint j = 0; j < clothWidth;j++) {
                 // Set the new positions and velocities of the particles
@@ -323,6 +361,10 @@ int main()
                 glDrawArrays(GL_TRIANGLES, 0, 36);
             }
         }
+
+        glBindVertexArray(VAO[1]);
+        glDrawArrays(GL_LINES, 0, vertexData.size());
+
         glBindVertexArray(0); // Unbind VAO
 
         // Swap front and back buffers
@@ -330,8 +372,8 @@ int main()
     }
 
     // Properly de-allocate all resources once they've outlived their purpose
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1, &VBO);
+    glDeleteVertexArrays(2, VAO);
+    glDeleteBuffers(2, VBO);
 
     // Terminate GLFW, clearing any resources allocated by GLFW.
     glfwTerminate();
