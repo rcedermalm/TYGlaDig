@@ -114,14 +114,18 @@ int main()
     GLfloat h = 0.007f; // length of step for RK4 calculations
 
     // Create all the particles and put them in a grid
-    const GLuint clothWidth = 5, clothHeight = 5;
+    // Always use an odd number
+    const GLuint clothWidth = 9, clothHeight = 9;
     Particle theParticles[clothHeight][clothWidth];
 
-    float heightCounter = 3.0f;
+    float heightCounter = 5.0f;
     for(GLuint i = 0; i < clothHeight; i++ ){
         float widthCounter = -3.0f;
         for(GLuint j = 0; j < clothWidth; j++){
             theParticles[i][j] = Particle(m, glm::vec3(widthCounter*L0, heightCounter*L0, 0.0f));
+            if(i == 0 & j == 0 || i == 0 & j == (clothHeight - 1) ) {
+                theParticles[i][j].makeStationary();
+            }
             widthCounter++;
         }
         heightCounter--;
@@ -286,7 +290,7 @@ int main()
                     theForce += theDampForce(theParticles[i+2][j], theParticles[i][j], b);}
 
                 // Add gravity
-                //theForce += gravity;
+                theForce += gravity;
 
                 // Set the current acceleration of the particle
                 theParticles[i][j].setAcc((1/m)*(theForce));
@@ -302,10 +306,12 @@ int main()
         glBindVertexArray(VAO);  // Bind VAO
         for(GLuint i = 0; i < clothHeight; i++) {
             for(GLuint j = 0; j < clothWidth;j++) {
-                // Set the new positions and velocities of the particles
-                theParticles[i][j].setPos(RungeKuttaForPosDiff(theParticles[i][j], h) + theParticles[i][j].getPos());
-                newCubePositions[i][j] += RungeKuttaForPosDiff(theParticles[i][j], h);
-                theParticles[i][j].setVel(RungeKuttaForVel(theParticles[i][j], h));
+                if (!theParticles[i][j].isStationary()) {
+                    // Set the new positions and velocities of the particles
+                    theParticles[i][j].setPos(RungeKuttaForPosDiff(theParticles[i][j], h) + theParticles[i][j].getPos());
+                    newCubePositions[i][j] += RungeKuttaForPosDiff(theParticles[i][j], h);
+                    theParticles[i][j].setVel(RungeKuttaForVel(theParticles[i][j], h));
+                }
 
                 // Calculate the model matrix for each object and pass it to shader before drawing
                 glm::mat4 model;
@@ -318,7 +324,6 @@ int main()
                  *  rör sig. Kolla även upp om det är möjligt att rendera så att tomrummen fylls, aka att det faktiskt
                  *  ser ut som ett tyg och inte ett gridsystem.
                  */
-
 
                 glDrawArrays(GL_TRIANGLES, 0, 36);
             }

@@ -25,6 +25,7 @@ private:
     glm::vec3 position;
     glm::vec3 velocity;
     glm::vec3 acceleration;
+    bool stationary;
 
 public:
     Particle(GLfloat theMass, glm::vec3 thePosition);
@@ -39,6 +40,9 @@ public:
     void setPos(glm::vec3 newPosition);
     void setVel(glm::vec3 newVelocity);
     void setAcc(glm::vec3 newAcceleration);
+
+    void makeStationary();
+    bool isStationary();
 
     void print();
 };

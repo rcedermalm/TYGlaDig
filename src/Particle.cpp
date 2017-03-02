@@ -9,6 +9,7 @@ Particle::Particle(GLfloat theMass, glm::vec3 thePosition){
     position = thePosition;
     velocity = glm::vec3{0.0f, 0.0f, 0.0f};
     acceleration = glm::vec3(0.0f,0.0f,0.0f);
+    stationary = false;
 };
 
 
@@ -44,6 +45,13 @@ void Particle::setAcc(glm::vec3 newAcceleration) {
     acceleration = newAcceleration;
 }
 
+void Particle::makeStationary() {
+    stationary = true;
+}
+
+bool Particle::isStationary() {
+    return stationary;
+}
 
 void Particle::print(){
     std::cout << "Position: " << position.x << "," << position.y << "," << position.z << std::endl
