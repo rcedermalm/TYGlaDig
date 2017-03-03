@@ -120,7 +120,7 @@ int main()
 
     float heightCounter = 5.0f;
     for(GLuint i = 0; i < clothHeight; i++ ){
-        float widthCounter = -3.0f;
+        float widthCounter = -5.0f;
         for(GLuint j = 0; j < clothWidth; j++){
             theParticles[i][j] = Particle(m, glm::vec3(widthCounter*L0, 0.0f, heightCounter*L0));
             if(i == 0 & j == 0 || i == 0 & j == (clothHeight - 1) ) {
@@ -220,7 +220,8 @@ int main()
 
     /**************** Uniform variables **********************/
     GLint modelLoc = glGetUniformLocation(theShaders, "model");
-
+    GLint viewLoc = glGetUniformLocation(theShaders, "view");
+    GLint projLoc = glGetUniformLocation(theShaders, "projection");
 
     /****************************************************/
     /******************* RENDER LOOP ********************/
@@ -252,18 +253,16 @@ int main()
         view = camera.GetViewMatrix();
         glm::mat4 projection;
         projection = glm::perspective(camera.Zoom, (float)WIDTH/(float)HEIGHT, 0.1f, 1000.0f);
-        // Get the uniform locations
-        GLint viewLoc = glGetUniformLocation(theShaders, "view");
-        GLint projLoc = glGetUniformLocation(theShaders, "projection");
-        // Pass the matrices to the shader
+
         glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
         glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
+        // The state of the left mouse button (checks later if it's pressed or not
         int state = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
 
         /**************** RENDER STUFF ****************/
 
-        glm::vec3 gravity = glm::vec3(0.0f, -0.00098f, 0.0f);
+        glm::vec3 gravity = glm::vec3(0.0f, -0.00098f*2, 0.0f);
 
 
         // Calculate the forces acting on the particles
@@ -311,7 +310,6 @@ int main()
                     theForce += (glm::vec3(0.1f, -0.1f, 0.0f));
                 }
 
-
                 // Add gravity
                 theForce += gravity;
 
@@ -325,10 +323,6 @@ int main()
         for(GLuint i = 0; i < clothHeight; i++) {
             for(GLuint j = 0; j < clothWidth;j++) {
                 if (!theParticles[i][j].isStationary()) {
-
-
-
-
                     // Set the new positions and velocities of the particles
                     theParticles[i][j].setPos(RungeKuttaForPosDiff(theParticles[i][j], h) + theParticles[i][j].getPos());
                     newCubePositions[i][j] += (RungeKuttaForPosDiff(theParticles[i][j], h));
@@ -370,8 +364,7 @@ int main()
  ******** Function initialisation **********
  *******************************************/
 
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
-{
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode) {
     // When a user presses the escape key, we set the WindowShouldClose property to true,
     // closing the application
     if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
@@ -384,7 +377,6 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 }
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
-
     if (firstMouse)
     {
         lastX = (GLfloat)xpos;
@@ -398,16 +390,13 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
     lastY = (GLfloat)ypos;
 
     camera.ProcessMouseMovement(xoffset, yoffset);
-
 }
 
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
-{
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
     camera.ProcessMouseScroll(yoffset);
 }
 
-void do_movement()
-{
+void do_movement() {
     // Camera controls
     if(keys[GLFW_KEY_W])
         camera.ProcessKeyboard(FORWARD,deltaTime);
@@ -436,7 +425,6 @@ glm::vec3 theDampForce(Particle p1, Particle p2, GLfloat b){
 
 // Calculate the new velocity using RK4
 glm::vec3 RungeKuttaForVel(Particle p, GLfloat h){
-
     glm::vec3 next, k1, k2, k3, k4;
 
     k1 = p.getAcc();
