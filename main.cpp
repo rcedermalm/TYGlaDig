@@ -122,7 +122,7 @@ int main()
     for(GLuint i = 0; i < clothHeight; i++ ){
         float widthCounter = -5.0f;
         for(GLuint j = 0; j < clothWidth; j++){
-            theParticles[i][j] = Particle(m, glm::vec3(widthCounter*L0, 0.0f, heightCounter*L0));
+            theParticles[i][j] = Particle(m, glm::vec3(widthCounter*L0,0.0f, heightCounter*L0));
             if(i == 0 & j == 0 || i == 0 & j == (clothHeight - 1) ) {
                 theParticles[i][j].makeStationary();
             }
@@ -190,17 +190,16 @@ int main()
             -0.01f,  0.01f, -0.01f,  1.0f, 1.0f, 1.0f,
     };
 
-    /***************** Vertex Buffer Objects (VBO) ******************/
-    GLuint VBO;
-    glGenBuffers(1, &VBO); // Create Buffer ID
-    glBindBuffer(GL_ARRAY_BUFFER, VBO); // Bind a buffer to the ID
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); // Copies the vertices data into the buffer
-
-    /***************** Vertex Array Objects (VAO) ******************/
-    GLuint VAO;
+    /***************** VAOs and VBOs ******************/
+    GLuint EBO, VBO, VAO;
     glGenVertexArrays(1, &VAO);
-    glBindVertexArray(VAO);
+    glGenBuffers(1, &VBO); // Create Buffer ID
+    glGenBuffers(1, &EBO);
 
+    /** The boxes **/
+/*    glBindVertexArray(VAOs[0]);
+    glBindBuffer(GL_ARRAY_BUFFER, VBOs[0]); // Bind a buffer to the ID
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); // Copies the vertices data into the buffer
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0); // Positions
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat))); // Colors
 
@@ -210,6 +209,9 @@ int main()
 
     // Unbind VAO
     glBindVertexArray(0);
+*/
+
+
 
     /***************** Shaders ********************/
     // Build and compile the shader program
@@ -246,7 +248,7 @@ int main()
         // OpenGL settings
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
         // Create camera transformation
         glm::mat4 view;
@@ -263,7 +265,6 @@ int main()
         /**************** RENDER STUFF ****************/
 
         glm::vec3 gravity = glm::vec3(0.0f, -0.00098f*2, 0.0f);
-
 
         // Calculate the forces acting on the particles
         for(GLuint i = 0; i < clothHeight; i++){
@@ -307,7 +308,7 @@ int main()
                     theForce += theDampForce(theParticles[i+1][j], theParticles[i][j], b);}
 
                 if (state == GLFW_PRESS && (i == (clothHeight/2)-1) && (j == (clothWidth/2)-1)){
-                    theForce += (glm::vec3(0.0f, 1.0f, 0.0f));
+                    theForce += (glm::vec3(0.0f, 0.0f, 1.0f));
                 }
 
                 // Add gravity
@@ -319,8 +320,8 @@ int main()
         }
 
         // Draw cubes
-        glBindVertexArray(VAO);  // Bind VAO
-        for(GLuint i = 0; i < clothHeight; i++) {
+        //glBindVertexArray(VAOs[0]);  // Bind VAO
+      /*  for(GLuint i = 0; i < clothHeight; i++) {
             for(GLuint j = 0; j < clothWidth;j++) {
                 if (!theParticles[i][j].isStationary()) {
                     // Set the new positions and velocities of the particles
@@ -328,23 +329,78 @@ int main()
                     newCubePositions[i][j] += (RungeKuttaForPosDiff(theParticles[i][j], h));
                     theParticles[i][j].setVel(RungeKuttaForVel(theParticles[i][j], h));
                 }
-
+/*
                 // Calculate the model matrix for each object and pass it to shader before drawing
                 glm::mat4 model;
                 model = glm::translate(model, cubePositions[i][j]);
                 glm::vec3 theTransVec = (newCubePositions[i][j]);
                 model = glm::translate(model, theTransVec);
                 glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-
+*/
                 /** Kolla upp om det går att rendera linjer mellan varje partikel så att det blir mer tydligt hur tyget
                  *  rör sig. Kolla även upp om det är möjligt att rendera så att tomrummen fylls, aka att det faktiskt
                  *  ser ut som ett tyg och inte ett gridsystem.
                  */
 
-                glDrawArrays(GL_TRIANGLES, 0, 36);
+                //glDrawArrays(GL_TRIANGLES, 0, 36);
+      //      }
+   //     }
+   //     glBindVertexArray(0); // Unbind VAO
+
+        GLfloat line_vertices[6*clothHeight*clothWidth];
+        GLuint counter = 0;
+
+        for(GLuint i = 0; i < clothHeight; i++){
+            for(GLuint j = 0; j < clothWidth; j++){
+                if (!theParticles[i][j].isStationary()) {
+                    // Set the new positions and velocities of the particles
+                    theParticles[i][j].setPos(RungeKuttaForPosDiff(theParticles[i][j], h) + theParticles[i][j].getPos());
+                   // newCubePositions[i][j] += (RungeKuttaForPosDiff(theParticles[i][j], h));
+                    theParticles[i][j].setVel(RungeKuttaForVel(theParticles[i][j], h));
+                }
+
+                    line_vertices[counter++] = theParticles[i][j].getPos().x;
+                    line_vertices[counter++] = theParticles[i][j].getPos().y;
+                    line_vertices[counter++] = theParticles[i][j].getPos().z;
+                    line_vertices[counter++] = 1.0f;
+                    line_vertices[counter++] = 1.0f;
+                    line_vertices[counter++] = 1.0f;
             }
         }
-        glBindVertexArray(0); // Unbind VAO
+
+        GLuint indices[(clothHeight-1)*(clothWidth-1)*6];
+        counter = 0;
+
+        for(GLuint i = 0; i < clothHeight-1; i++){
+            for(GLuint j = 0; j < clothWidth-1; j++){
+                indices[counter++] = i * (GLuint)clothWidth + j;
+                indices[counter++] = i * (GLuint)clothWidth + 1 + j;
+                indices[counter++] = i * (GLuint)clothWidth + (GLuint)clothWidth + j;
+                indices[counter++] = i * (GLuint)clothWidth + 1 + j;
+                indices[counter++] = i * (GLuint)clothWidth + (GLuint)clothWidth + 1 + j;
+                indices[counter++] = i * (GLuint)clothWidth + (GLuint)clothWidth + j;
+            }
+        }
+
+        glBindVertexArray(VAO);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO); // Bind a buffer to the ID
+        glBufferData(GL_ARRAY_BUFFER, sizeof(line_vertices), line_vertices, GL_STATIC_DRAW); // Copies the vertices data into the buffer
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0); // Positions
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat))); // Colors
+
+        // Enable all VAOs
+        glEnableVertexAttribArray(0);
+        glEnableVertexAttribArray(1);
+
+        glm::mat4 model;
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+        glDrawElements(GL_TRIANGLES, 6*clothHeight*clothWidth, GL_UNSIGNED_INT, 0);
+
+        // Unbind VAO
+        glBindVertexArray(0);
 
         // Swap front and back buffers
         glfwSwapBuffers(window);
@@ -353,6 +409,7 @@ int main()
     // Properly de-allocate all resources once they've outlived their purpose
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
+    glDeleteBuffers(1, &EBO);
 
     // Terminate GLFW, clearing any resources allocated by GLFW.
     glfwTerminate();
