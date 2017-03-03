@@ -306,8 +306,8 @@ int main()
                 if(i!=clothHeight-1){ theForce += (-1.0f) * theSpringForce(theParticles[i+1][j], theParticles[i][j], L0, k);
                     theForce += theDampForce(theParticles[i+1][j], theParticles[i][j], b);}
 
-                if (state == GLFW_PRESS && (i == clothHeight-1) && (j == clothWidth-1)){
-                    theForce += (glm::vec3(0.1f, -0.1f, 0.0f));
+                if (state == GLFW_PRESS && (i == (clothHeight/2)-1) && (j == (clothWidth/2)-1)){
+                    theForce += (glm::vec3(0.0f, 1.0f, 0.0f));
                 }
 
                 // Add gravity
