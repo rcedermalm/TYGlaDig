@@ -83,7 +83,7 @@ int main()
     glfwMakeContextCurrent(window);
 
     // GLFW Options
-    //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     // Set this to true so GLEW knows to use a modern approach to retrieving function pointers and extensions
     glewExperimental = GL_TRUE;
@@ -122,7 +122,7 @@ int main()
     for(GLuint i = 0; i < clothHeight; i++ ){
         float widthCounter = -3.0f;
         for(GLuint j = 0; j < clothWidth; j++){
-            theParticles[i][j] = Particle(m, glm::vec3(widthCounter*L0, heightCounter*L0, 0.0f));
+            theParticles[i][j] = Particle(m, glm::vec3(widthCounter*L0, 0.0f, heightCounter*L0));
             if(i == 0 & j == 0 || i == 0 & j == (clothHeight - 1) ) {
                 theParticles[i][j].makeStationary();
             }
@@ -132,7 +132,7 @@ int main()
     }
 
     //Just to move the particle in the right-bottom corner a bit more to the right and down so that the fabric moves
-    theParticles[clothHeight-1][clothWidth-1].setPos(theParticles[clothHeight-1][clothWidth-1].getPos() + glm::vec3(0.07f, -0.07f, 0.0f));
+    //theParticles[clothHeight-1][clothWidth-1].setPos(theParticles[clothHeight-1][clothWidth-1].getPos() + glm::vec3(0.1f, -0.17f, 0.0f));
 
     // Create a grid with the positions in the beginning and initialize a grid for
     // calculating the new positions (calculations for that one are made in the render loop)
@@ -235,6 +235,7 @@ int main()
 
         // Check if any events have been activated (key pressed, mouse moved etc.) and call corresponding response functions
         glfwPollEvents();
+        do_movement();
 
         // Update window size
         glfwGetFramebufferSize(window, &width, &height);
@@ -246,9 +247,24 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
+        // Create camera transformation
+        glm::mat4 view;
+        view = camera.GetViewMatrix();
+        glm::mat4 projection;
+        projection = glm::perspective(camera.Zoom, (float)WIDTH/(float)HEIGHT, 0.1f, 1000.0f);
+        // Get the uniform locations
+        GLint viewLoc = glGetUniformLocation(theShaders, "view");
+        GLint projLoc = glGetUniformLocation(theShaders, "projection");
+        // Pass the matrices to the shader
+        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+        glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
+
+        int state = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
+
         /**************** RENDER STUFF ****************/
 
         glm::vec3 gravity = glm::vec3(0.0f, -0.00098f, 0.0f);
+
 
         // Calculate the forces acting on the particles
         for(GLuint i = 0; i < clothHeight; i++){
@@ -257,27 +273,8 @@ int main()
                 /** Kanske implementera att koden innanför for-loopen körs på GPU:n så att allt går fortare, kolla upp
                  * OpenCL. Kan dock bli överkurs, möjligt att det bara räcker att sitta på en stationär dator.
                  */
+
                 glm::vec3 theForce = glm::vec3(0.0f, 0.0f, 0.0f);
-
-                // Structural springs and dampers
-                if(j!=clothWidth-1){theForce += theSpringForce(theParticles[i][j], theParticles[i][j+1], L0, k);
-                    theForce += (-1.0f) * theDampForce(theParticles[i][j], theParticles[i][j+1], b);}
-                if(i!=0){ theForce += theSpringForce(theParticles[i][j], theParticles[i-1][j], L0, k);
-                    theForce += (-1.0f) * theDampForce(theParticles[i][j], theParticles[i-1][j], b);}
-                if(j!=0){ theForce += (-1.0f) * theSpringForce(theParticles[i][j-1], theParticles[i][j], L0, k);
-                    theForce += theDampForce(theParticles[i][j-1], theParticles[i][j], b);}
-                if(i!=clothHeight-1){ theForce += (-1.0f) * theSpringForce(theParticles[i+1][j], theParticles[i][j], L0, k);
-                    theForce += theDampForce(theParticles[i+1][j], theParticles[i][j], b);}
-
-                // Shear springs and dampers
-                if(i!=0 && j!=clothWidth-1){ theForce += theSpringForce(theParticles[i][j], theParticles[i-1][j+1], L0cross, k);
-                    theForce += (-1.0f) * theDampForce(theParticles[i][j], theParticles[i-1][j+1], b);}
-                if(i!=0 && j!=0){ theForce += theSpringForce(theParticles[i][j], theParticles[i-1][j-1], L0cross, k);
-                    theForce += (-1.0f) * theDampForce(theParticles[i][j], theParticles[i-1][j-1], b);}
-                if(i!= clothHeight-1 && j!= 0){ theForce += (-1.0f) * theSpringForce(theParticles[i+1][j-1], theParticles[i][j], L0cross, k);
-                    theForce += theDampForce(theParticles[i+1][j-1], theParticles[i][j], b);}
-                if(i!= clothHeight-1 && j!=clothWidth-1){ theForce += (-1.0f) * theSpringForce(theParticles[i+1][j+1], theParticles[i][j], L0cross, k);
-                    theForce += theDampForce(theParticles[i+1][j+1], theParticles[i][j], b);}
 
                 // Bend springs and dampers
                 if(j<clothWidth-2){ theForce += theSpringForce(theParticles[i][j], theParticles[i][j+2], (2.0f)*L0, k);
@@ -289,6 +286,32 @@ int main()
                 if(i<clothHeight-2){ theForce += (-1.0f) * theSpringForce(theParticles[i+2][j], theParticles[i][j], (2.0f)*L0, k);
                     theForce += theDampForce(theParticles[i+2][j], theParticles[i][j], b);}
 
+                // Shear springs and dampers
+                if(i!=0 && j!=clothWidth-1){ theForce += theSpringForce(theParticles[i][j], theParticles[i-1][j+1], L0cross, k);
+                    theForce += (-1.0f) * theDampForce(theParticles[i][j], theParticles[i-1][j+1], b);}
+                if(i!=0 && j!=0){ theForce += theSpringForce(theParticles[i][j], theParticles[i-1][j-1], L0cross, k);
+                    theForce += (-1.0f) * theDampForce(theParticles[i][j], theParticles[i-1][j-1], b);}
+                if(i!= clothHeight-1 && j!= 0){ theForce += (-1.0f) * theSpringForce(theParticles[i+1][j-1], theParticles[i][j], L0cross, k);
+                    theForce += theDampForce(theParticles[i+1][j-1], theParticles[i][j], b);}
+                if(i!= clothHeight-1 && j!=clothWidth-1){ theForce += (-1.0f) * theSpringForce(theParticles[i+1][j+1], theParticles[i][j], L0cross, k);
+                    theForce += theDampForce(theParticles[i+1][j+1], theParticles[i][j], b);}
+
+
+                // Structural springs and dampers
+                if(j!=clothWidth-1){theForce += theSpringForce(theParticles[i][j], theParticles[i][j+1], L0, k);
+                    theForce += (-1.0f) * theDampForce(theParticles[i][j],theParticles[i][j+1], b);}
+                if(i!=0){ theForce += theSpringForce(theParticles[i][j], theParticles[i-1][j], L0, k);
+                    theForce += (-1.0f) * theDampForce(theParticles[i][j], theParticles[i-1][j], b);}
+                if(j!=0){ theForce += (-1.0f) * theSpringForce(theParticles[i][j-1], theParticles[i][j], L0, k);
+                    theForce += theDampForce(theParticles[i][j-1], theParticles[i][j], b);}
+                if(i!=clothHeight-1){ theForce += (-1.0f) * theSpringForce(theParticles[i+1][j], theParticles[i][j], L0, k);
+                    theForce += theDampForce(theParticles[i+1][j], theParticles[i][j], b);}
+
+                if (state == GLFW_PRESS && (i == clothHeight-1) && (j == clothWidth-1)){
+                    theForce += (glm::vec3(0.1f, -0.1f, 0.0f));
+                }
+
+
                 // Add gravity
                 theForce += gravity;
 
@@ -297,19 +320,18 @@ int main()
             }
         }
 
-        /** Implementera så att partiklarna i de översta hörnen ([0][0] & [0][clothWidth-1]) sitter fast i två
-         * "krokar" (statiska partiklar som inte kan röra sig) om vi tänker oss att tyget ska hängas upp.
-         * Annars behövs det ej.
-         */
-
         // Draw cubes
         glBindVertexArray(VAO);  // Bind VAO
         for(GLuint i = 0; i < clothHeight; i++) {
             for(GLuint j = 0; j < clothWidth;j++) {
                 if (!theParticles[i][j].isStationary()) {
+
+
+
+
                     // Set the new positions and velocities of the particles
                     theParticles[i][j].setPos(RungeKuttaForPosDiff(theParticles[i][j], h) + theParticles[i][j].getPos());
-                    newCubePositions[i][j] += RungeKuttaForPosDiff(theParticles[i][j], h);
+                    newCubePositions[i][j] += (RungeKuttaForPosDiff(theParticles[i][j], h));
                     theParticles[i][j].setVel(RungeKuttaForVel(theParticles[i][j], h));
                 }
 
@@ -361,8 +383,8 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         keys[key] = false;
 }
 
-void mouse_callback(GLFWwindow* window, double xpos, double ypos)
-{
+void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
+
     if (firstMouse)
     {
         lastX = (GLfloat)xpos;
@@ -376,6 +398,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
     lastY = (GLfloat)ypos;
 
     camera.ProcessMouseMovement(xoffset, yoffset);
+
 }
 
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
@@ -400,6 +423,7 @@ void do_movement()
 glm::vec3 theSpringForce(Particle p1, Particle p2, GLfloat L0, GLfloat k){
     GLfloat lengthBParticles = sqrtf(GLfloat(pow(p2.getPos().x-p1.getPos().x,2) + pow(p2.getPos().y-p1.getPos().y,2) + pow(p2.getPos().z-p1.getPos().z,2)));
     glm::vec3 length = p2.getPos() - p1.getPos();
+
     glm::vec3 Fk = k*(lengthBParticles-L0)*(normalize(length));
     return Fk;
 }
