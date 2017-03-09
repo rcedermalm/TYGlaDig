@@ -54,14 +54,6 @@ bool firstMouse = true;
 // Stores key information if the key is pressed or not
 bool keys[1024];
 
-// variables for the ball
-/*
-const int spaceVertices = 10;
-const int vertexAmount = (90/spaceVertices)*(360/spaceVertices)*4;
-
-vertices vertex[vertexAmount];
- */
-
 /*******************************************
  ******     FUNCTION DECLARATIONS      *****
  *******************************************/
@@ -77,12 +69,8 @@ glm::vec3 RungeKuttaForVel(Particle p, float h);
 glm::vec3 RungeKuttaForPosDiff(Particle p, float h);
 
 // Functions for the ball
-/*
 glm::vec3 normalise(glm::vec3 vector);
-void ballCollision(Particle particle, const glm::vec3 centre, const GLfloat radius);
-void createBall(float nrSubdivisions, float transX, float transY, float transZ);
-void displayBall(float radius);
- */
+void ballCollision(Particle particle, const glm::vec3 centre, const float radius);
 
 /*******************************************
  **************    MAIN     ****************
@@ -106,7 +94,7 @@ int main()
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
     // Create a GLFWwindow object that we can use for GLFW's functions
-    GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "LearnOpenGL", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "TYGla dig", NULL, NULL);
 
     if (window == nullptr){
         std::cout << "Failed to create GLFW window" << std::endl;
@@ -147,13 +135,6 @@ int main()
     GLfloat h = 0.007f; // length of step for RK4 calculations
 
     // Ball
-    /*
-    float ballCentreX = 0.5f;
-    float ballCentreY = -0.5f;
-    glm::vec3 ballCentrePos(ballCentreX, ballCentreY, 0.0f);  // Center of ball
-    float ballRadius = 0.5f;   // Radius of ball
-    float ballTime = 0.0f; // Counter used to calculate the z position of the ball
-     */
     TriangleSoup ball;
     float ballRadius = 0.1f;
     int ballSegments = 8;
@@ -167,7 +148,7 @@ int main()
     for(GLuint i = 0; i < clothHeight; i++ ){
         float widthCounter = -5.0f;
         for(GLuint j = 0; j < clothWidth; j++){
-            theParticles[i][j] = Particle(m, glm::vec3(widthCounter*L0, 0.0f, heightCounter*L0));
+            theParticles[i][j] = Particle(m, glm::vec3(widthCounter*L0,0.0f, heightCounter*L0));
             if(i == 0 & j == 0 || i == 0 & j == (clothHeight - 1) ) {
                 theParticles[i][j].makeStationary();
             }
@@ -176,89 +157,29 @@ int main()
         heightCounter--;
     }
 
-    //Just to move the particle in the right-bottom corner a bit more to the right and down so that the fabric moves
-    //theParticles[clothHeight-1][clothWidth-1].setPos(theParticles[clothHeight-1][clothWidth-1].getPos() + glm::vec3(0.1f, -0.17f, 0.0f));
+    GLuint indices[(clothHeight-1)*(clothWidth-1)*6];
+    int counter = 0;
 
-    // Create a grid with the positions in the beginning and initialize a grid for
-    // calculating the new positions (calculations for that one are made in the render loop)
-    glm::vec3 cubePositions[clothHeight][clothWidth];
-    glm::vec3 newCubePositions[clothHeight][clothWidth];
-    for(GLuint i = 0; i < clothHeight; i++){
-        for(GLuint j = 0; j < clothWidth; j++){
-            cubePositions[i][j] = theParticles[i][j].getPos();
-            newCubePositions[i][j] = glm::vec3(0.0f, 0.0f, 0.0f);
+    for(GLuint i = 0; i < clothHeight-1; i++){
+        for(GLuint j = 0; j < clothWidth-1; j++){
+            indices[counter++] = i * clothWidth + j;
+            indices[counter++] = i * clothWidth + 1 + j;
+            indices[counter++] = i * clothWidth + clothWidth + j;
+            indices[counter++] = i * clothWidth + 1 + j;
+            indices[counter++] = i * clothWidth + clothWidth + 1 + j;
+            indices[counter++] = i * clothWidth + clothWidth + j;
         }
     }
-
-    // Create a cube
-    GLfloat vertices[] = {
-            -0.01f, -0.01f, -0.01f,  1.0f, 1.0f, 1.0f,
-             0.01f, -0.01f, -0.01f,  1.0f, 1.0f, 1.0f,
-             0.01f,  0.01f, -0.01f,  1.0f, 1.0f, 1.0f,
-             0.01f,  0.01f, -0.01f,  1.0f, 1.0f, 1.0f,
-            -0.01f,  0.01f, -0.01f,  1.0f, 1.0f, 1.0f,
-            -0.01f, -0.01f, -0.01f,  1.0f, 1.0f, 1.0f,
-
-            -0.01f, -0.01f,  0.01f,  1.0f, 1.0f, 1.0f,
-             0.01f, -0.01f,  0.01f,  1.0f, 1.0f, 1.0f,
-             0.01f,  0.01f,  0.01f,  1.0f, 1.0f, 1.0f,
-             0.01f,  0.01f,  0.01f,  1.0f, 1.0f, 1.0f,
-            -0.01f,  0.01f,  0.01f,  1.0f, 1.0f, 1.0f,
-            -0.01f, -0.01f,  0.01f,  1.0f, 1.0f, 1.0f,
-
-            -0.01f,  0.01f,  0.01f,  1.0f, 1.0f, 1.0f,
-            -0.01f,  0.01f, -0.01f,  1.0f, 1.0f, 1.0f,
-            -0.01f, -0.01f, -0.01f,  1.0f, 1.0f, 1.0f,
-            -0.01f, -0.01f, -0.01f,  1.0f, 1.0f, 1.0f,
-            -0.01f, -0.01f,  0.01f,  1.0f, 1.0f, 1.0f,
-            -0.01f,  0.01f,  0.01f,  1.0f, 1.0f, 1.0f,
-
-             0.01f,  0.01f,  0.01f,  1.0f, 1.0f, 1.0f,
-             0.01f,  0.01f, -0.01f,  1.0f, 1.0f, 1.0f,
-             0.01f, -0.01f, -0.01f,  1.0f, 1.0f, 1.0f,
-             0.01f, -0.01f, -0.01f,  1.0f, 1.0f, 1.0f,
-             0.01f, -0.01f,  0.01f,  1.0f, 1.0f, 1.0f,
-             0.01f,  0.01f,  0.01f,  1.0f, 1.0f, 1.0f,
-
-            -0.01f, -0.01f, -0.01f,  1.0f, 1.0f, 1.0f,
-             0.01f, -0.01f, -0.01f,  1.0f, 1.0f, 1.0f,
-             0.01f, -0.01f,  0.01f,  1.0f, 1.0f, 1.0f,
-             0.01f, -0.01f,  0.01f,  1.0f, 1.0f, 1.0f,
-            -0.01f, -0.01f,  0.01f,  1.0f, 1.0f, 1.0f,
-            -0.01f, -0.01f, -0.01f,  1.0f, 1.0f, 1.0f,
-
-            -0.01f,  0.01f, -0.01f,  1.0f, 1.0f, 1.0f,
-             0.01f,  0.01f, -0.01f,  1.0f, 1.0f, 1.0f,
-             0.01f,  0.01f,  0.01f,  1.0f, 1.0f, 1.0f,
-             0.01f,  0.01f,  0.01f,  1.0f, 1.0f, 1.0f,
-            -0.01f,  0.01f,  0.01f,  1.0f, 1.0f, 1.0f,
-            -0.01f,  0.01f, -0.01f,  1.0f, 1.0f, 1.0f,
-    };
 
     // Create ball
     ball.createSphere(ballRadius, ballSegments);
     ball.printInfo();
 
-    /***************** Vertex Buffer Objects (VBO) ******************/
-    GLuint VBO;
-    glGenBuffers(1, &VBO); // Create Buffer ID
-    glBindBuffer(GL_ARRAY_BUFFER, VBO); // Bind a buffer to the ID
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); // Copies the vertices data into the buffer
-
-    /***************** Vertex Array Objects (VAO) ******************/
-    GLuint VAO;
+    /***************** VAO, VBO and EBO ******************/
+    GLuint EBO, VBO, VAO;
     glGenVertexArrays(1, &VAO);
-    glBindVertexArray(VAO);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0); // Positions
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat))); // Colors
-
-    // Enable all VAOs
-    glEnableVertexAttribArray(0);
-    glEnableVertexAttribArray(1);
-
-    // Unbind VAO
-    glBindVertexArray(0);
+    glGenBuffers(1, &VBO); // Create Buffer IDs
+    glGenBuffers(1, &EBO);
 
     /***************** Shaders ********************/
     // Build and compile the shader program
@@ -268,7 +189,6 @@ int main()
     theShaders();
 
     /**************** Uniform variables **********************/
-    GLint modelLoc = glGetUniformLocation(theShaders, "model");
     GLint viewLoc = glGetUniformLocation(theShaders, "view");
     GLint projLoc = glGetUniformLocation(theShaders, "projection");
 
@@ -312,25 +232,19 @@ int main()
         /**************** RENDER STUFF ****************/
 
         glm::vec3 gravity = glm::vec3(0.0f, -0.00098f*2, 0.0f);
-        //ballTime++;
-        //ballCentrePos.z = cos(ballTime/50.0)*7; // Update z position of ball
 
         // Calculate the forces acting on the particles
         for(GLuint i = 0; i < clothHeight; i++){
             for(GLuint j = 0; j < clothWidth; j++){
-
-                /** Kanske implementera att koden innanför for-loopen körs på GPU:n så att allt går fortare, kolla upp
-                 * OpenCL. Kan dock bli överkurs, möjligt att det bara räcker att sitta på en stationär dator.
-                 */
 
                 glm::vec3 theForce = glm::vec3(0.0f, 0.0f, 0.0f);
 
                 // Bend springs and dampers
                 if(j<clothWidth-2){ theForce += theSpringForce(theParticles[i][j], theParticles[i][j+2], (2.0f)*L0, k);
                     theForce += (-1.0f) * theDampForce(theParticles[i][j], theParticles[i][j+2], b);}
-                if(i>2){ theForce += theSpringForce(theParticles[i][j], theParticles[i-2][j], (2.0f)*L0, k);
+                if(i>=2){ theForce += theSpringForce(theParticles[i][j], theParticles[i-2][j], (2.0f)*L0, k);
                     theForce += (-1.0f) * theDampForce(theParticles[i][j], theParticles[i-2][j], b);}
-                if(j>2){ theForce += (-1.0f) * theSpringForce(theParticles[i][j-2], theParticles[i][j], (2.0f)*L0, k);
+                if(j>=2){ theForce += (-1.0f) * theSpringForce(theParticles[i][j-2], theParticles[i][j], (2.0f)*L0, k);
                     theForce += theDampForce(theParticles[i][j-2], theParticles[i][j], b);}
                 if(i<clothHeight-2){ theForce += (-1.0f) * theSpringForce(theParticles[i+2][j], theParticles[i][j], (2.0f)*L0, k);
                     theForce += theDampForce(theParticles[i+2][j], theParticles[i][j], b);}
@@ -357,7 +271,7 @@ int main()
                     theForce += theDampForce(theParticles[i+1][j], theParticles[i][j], b);}
 
                 if (state == GLFW_PRESS && (i == (clothHeight/2)-1) && (j == (clothWidth/2)-1)){
-                    theForce += (glm::vec3(0.0f, 1.0f, 0.0f));
+                    theForce += (glm::vec3(0.0f, 0.0f, 0.7f));
                 }
 
                 // Add gravity
@@ -367,41 +281,52 @@ int main()
                 theParticles[i][j].setAcc((1/m)*(theForce));
 
                 // Resolve collision with ball
-                //ballCollision(theParticles[i][j], ballCentrePos, ballRadius);
+                //ball.getCentrePos();
+                ballCollision(theParticles[i][j], ball.getCentrePos(), ballRadius);
             }
         }
 
-        /**************************** Draw cubes ****************************/
-        glBindVertexArray(VAO);  // Bind VAO
-        for(GLuint i = 0; i < clothHeight; i++) {
-            for(GLuint j = 0; j < clothWidth;j++) {
+        GLfloat line_vertices[6*clothHeight*clothWidth];
+        GLuint counter = 0;
+
+        for(GLuint i = 0; i < clothHeight; i++){
+            for(GLuint j = 0; j < clothWidth; j++){
+
                 if (!theParticles[i][j].isStationary()) {
                     // Set the new positions and velocities of the particles
                     theParticles[i][j].setPos(RungeKuttaForPosDiff(theParticles[i][j], h) + theParticles[i][j].getPos());
-                    newCubePositions[i][j] += (RungeKuttaForPosDiff(theParticles[i][j], h));
                     theParticles[i][j].setVel(RungeKuttaForVel(theParticles[i][j], h));
                 }
 
-                // Calculate the model matrix for each object and pass it to shader before drawing
-                glm::mat4 model;
-                model = glm::translate(model, cubePositions[i][j]);
-                glm::vec3 theTransVec = (newCubePositions[i][j]);
-                model = glm::translate(model, theTransVec);
-                glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-
-                /** Kolla upp om det går att rendera linjer mellan varje partikel så att det blir mer tydligt hur tyget
-                 *  rör sig. Kolla även upp om det är möjligt att rendera så att tomrummen fylls, aka att det faktiskt
-                 *  ser ut som ett tyg och inte ett gridsystem.
-                 */
-
-                glDrawArrays(GL_TRIANGLES, 0, 36);
+                line_vertices[counter++] = theParticles[i][j].getPos().x;
+                line_vertices[counter++] = theParticles[i][j].getPos().y;
+                line_vertices[counter++] = theParticles[i][j].getPos().z;
+                line_vertices[counter++] = 1.0f;
+                line_vertices[counter++] = 1.0f;
+                line_vertices[counter++] = 1.0f;
             }
         }
 
         /**************************** Draw ball ****************************/
         ball.render();
 
-        glBindVertexArray(0); // Unbind VAO
+        glBindVertexArray(VAO);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO); // Bind a buffer to the ID
+        glBufferData(GL_ARRAY_BUFFER, sizeof(line_vertices), line_vertices, GL_STREAM_DRAW); // Copies the vertices data into the buffer
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0); // Positions
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat))); // Colors
+
+        // Enable all VAOs
+        glEnableVertexAttribArray(0);
+        glEnableVertexAttribArray(1);
+
+        glDrawElements(GL_TRIANGLES, 6*(clothHeight-1)*(clothWidth-1), GL_UNSIGNED_INT, 0);
+
+        // Unbind VAO
+        glBindVertexArray(0);
 
         // Swap front and back buffers
         glfwSwapBuffers(window);
@@ -410,6 +335,7 @@ int main()
     // Properly de-allocate all resources once they've outlived their purpose
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
+    glDeleteBuffers(1, &EBO);
 
     // Terminate GLFW, clearing any resources allocated by GLFW.
     glfwTerminate();
@@ -441,8 +367,8 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
         firstMouse = false;
     }
 
-    GLfloat xoffset = (GLfloat)(xpos - lastX);
-    GLfloat yoffset = (GLfloat)(lastY - ypos); // Reversed since y-coordinates go from bottom to left
+    GLfloat xoffset = (GLfloat)xpos - lastX;
+    GLfloat yoffset = lastY - (GLfloat)ypos; // Reversed since y-coordinates go from bottom to left
     lastX = (GLfloat)xpos;
     lastY = (GLfloat)ypos;
 
@@ -504,74 +430,31 @@ glm::vec3 RungeKuttaForPosDiff(Particle p, GLfloat h){
     return next;
 }
 
-//Functions for the ball
-/*
 glm::vec3 normalise(glm::vec3 vector){
     float length = vector.length();
     return glm::vec3(vector.x/length, vector.y/length, vector.z/length);
 }
 
 // Detect collision between particle and ball
-void ballCollision(Particle particle, const glm::vec3 centre, const float radius) {
-    glm::vec3 collisionVector = particle.getPos() - centre;
-    float lengthIntersection = collisionVector.length();
+void ballCollision(Particle particle, const glm::vec3 centre, const float r) {
+    double radius = (double)r;
+    float collisionX = particle.getPos().x - centre.x;
+    float collisionY = particle.getPos().y - centre.y;
+    float collisionZ = particle.getPos().z - centre.z;
+    double lengthIntersection = sqrt(pow(collisionX, 2)+pow(collisionY, 2)+pow(collisionZ, 2));
+    glm::vec3 collisionVector = glm::vec3(collisionX, collisionY, collisionZ);
+    //printf("Distance between: %8.2f\n", lengthIntersection);
+    //float lengthIntersection = collisionVector.length();
+
+    //printf("lengthIntersection: %8.2f\n", lengthIntersection);
+    //printf("lengthIntersection: %f\n", lengthIntersection);
     // If particle is inside the ball
-    if ( lengthIntersection < radius) {
+    if ( lengthIntersection <= radius) {
+        printf("Within radius: %d\n", lengthIntersection < radius);
         // Project the particle to the surface of the ball
-        particle.setPos(normalise(collisionVector)*(radius - lengthIntersection));
+        glm::vec3 normColVec = normalise(collisionVector);
+        printf("collisionVector x y z : %8.2f %8.2f %8.2f\n", collisionVector.x, collisionVector.y, collisionVector.z);
+        //printf("normColVec x y z : %8.2f %8.2f %8.2f\n", normColVec.x, normColVec.y, normColVec.z);
+        particle.setPos(glm::vec3(collisionVector.x*(radius - lengthIntersection), collisionVector.y*(radius - lengthIntersection), collisionVector.z*(radius - lengthIntersection)));
     }
 }
-
-void createBall(float nrSubdivisions, float transX, float transY, float transZ) {
-    int currentVertex = 0;
-    int i, j;
-    for(j = 0; j <= 90 - spaceVertices; j += spaceVertices) {
-        for(i = 0; i <= 360 - spaceVertices; i += spaceVertices) {
-            vertex[currentVertex].X = nrSubdivisions * sin((i)/180*M_PI) * sin((j)/180*M_PI) - transX; // Calculate X value
-            vertex[currentVertex].Y = nrSubdivisions * cos((i)/180*M_PI) * sin((j)/180*M_PI) + transY; // Calculate Y value
-            vertex[currentVertex].Z = nrSubdivisions * cos((j)/180*M_PI) - transZ; // Calculate Z value
-
-            currentVertex++;
-
-            // Add spaceVertices to j values
-            vertex[currentVertex].X = nrSubdivisions * sin((i)/180*M_PI) * sin((j + spaceVertices)/180*M_PI) - transX;
-            vertex[currentVertex].Y = nrSubdivisions * cos((i)/180*M_PI) * sin((j + spaceVertices)/180*M_PI) + transY;
-            vertex[currentVertex].Z = nrSubdivisions * cos((j + spaceVertices)/180*M_PI) - transZ;
-
-            currentVertex++;
-
-            // Add spaceVertices to i values
-            vertex[currentVertex].X = nrSubdivisions * sin((i + spaceVertices)/180*M_PI) * sin((j)/180*M_PI) - transX;
-            vertex[currentVertex].Y = nrSubdivisions * cos((i + spaceVertices)/180*M_PI) * sin((j)/180*M_PI) + transY;
-            vertex[currentVertex].Z = nrSubdivisions * cos((j)/180*M_PI) - transZ;
-
-            currentVertex++;
-
-            // Add spaceVertices to both the i and j values
-            vertex[currentVertex].X = nrSubdivisions * sin((i + spaceVertices)/180*M_PI) * sin((j + spaceVertices)/180*M_PI) - transX;
-            vertex[currentVertex].Y = nrSubdivisions * cos((i + spaceVertices)/180*M_PI) * sin((j + spaceVertices)/180*M_PI) + transY;
-            vertex[currentVertex].Z = nrSubdivisions * cos((j + spaceVertices)/180*M_PI) - transZ;
-
-            currentVertex++;
-        }
-    }
-}
-
-void displayBall(float radius) {
-    // Scale the ball
-    glScalef(0.0125 * radius, 0.0125 * radius, 0.0125 * radius);
-
-    // Rotate to frontal position
-    glRotatef(90, 1, 0, 0);
-
-    // Draw it using triangle strips
-    glBegin(GL_TRIANGLE_STRIP);
-    for(int i = 0; i <= vertexAmount; i++) {
-        glVertex3f(vertex[i].X, vertex[i].Y, -vertex[i].Z);
-    }
-    for(int i = 0; i <= vertexAmount; i++) {
-        glVertex3f(vertex[i].X, vertex[i].Y, vertex[i].Z);
-    }
-    glEnd();
-}
-*/

@@ -68,6 +68,7 @@ void TriangleSoup::createSphere(float radius, int segments) {
     double theta, phi;
     int vSegs, hSegs;
     int stride = 8;
+    float shiftPos = -0.2f;
 
     // Delete any previous content in the TriangleSoup object
     Clean();
@@ -85,25 +86,25 @@ void TriangleSoup::createSphere(float radius, int segments) {
 
     // The vertex array: 3D xyz, 3D normal, 2D st (8 floats per vertex)
     // First vertex: top pole (+z is "up" in object local coords)
-    vertexArray[0] = 0.0f;
-    vertexArray[1] = 0.0f;
-    vertexArray[2] = radius;
-    vertexArray[3] = 0.0f;
-    vertexArray[4] = 0.0f;
-    vertexArray[5] = 1.0f;
-    vertexArray[6] = 0.5f;
-    vertexArray[7] = 1.0f;
+    vertexArray[0] = 0.0f+shiftPos;
+    vertexArray[1] = 0.0f+shiftPos;
+    vertexArray[2] = radius+shiftPos;
+    vertexArray[3] = 0.0f+shiftPos;
+    vertexArray[4] = 0.0f+shiftPos;
+    vertexArray[5] = 1.0f+shiftPos;
+    vertexArray[6] = 0.5f+shiftPos;
+    vertexArray[7] = 1.0f+shiftPos;
 
     // Last vertex: Bottom pole
     base = (nVerts-1) * stride;
-    vertexArray[base+0] = 0.0f;
-    vertexArray[base+1] = 0.0f;
-    vertexArray[base+2] = -radius;
-    vertexArray[base+3] = 0.0f;
-    vertexArray[base+4] = 0.0f;
-    vertexArray[base+5] = -1.0f;
-    vertexArray[base+6] = 0.5f;
-    vertexArray[base+7] = 0.0f;
+    vertexArray[base+0] = 0.0f+shiftPos;
+    vertexArray[base+1] = 0.0f+shiftPos;
+    vertexArray[base+2] = -radius+shiftPos;
+    vertexArray[base+3] = 0.0f+shiftPos;
+    vertexArray[base+4] = 0.0f+shiftPos;
+    vertexArray[base+5] = -1.0f+shiftPos;
+    vertexArray[base+6] = 0.5f+shiftPos;
+    vertexArray[base+7] = 0.0f+shiftPos;
 
     // All the other vertices
     for(j = 0; j < vSegs -1; j++) {
@@ -115,14 +116,14 @@ void TriangleSoup::createSphere(float radius, int segments) {
             x = R * cos(phi);
             y = R * sin(phi);
             base = (1+j*(hSegs+1)+i) * stride;
-            vertexArray[base] = radius*x;
-            vertexArray[base+1] = radius*y;
-            vertexArray[base+2] = radius*z;
-            vertexArray[base+3] = x;
-            vertexArray[base+4] = y;
-            vertexArray[base+5] = z;
-            vertexArray[base+6] = (float)i/hSegs;
-            vertexArray[base+7] = 1.0f-(float)(j+1)/vSegs;
+            vertexArray[base] = radius*x+shiftPos;
+            vertexArray[base+1] = radius*y+shiftPos;
+            vertexArray[base+2] = radius*z+shiftPos;
+            vertexArray[base+3] = x+shiftPos;
+            vertexArray[base+4] = y+shiftPos;
+            vertexArray[base+5] = z+shiftPos;
+            vertexArray[base+6] = (float)i/hSegs+shiftPos;
+            vertexArray[base+7] = 1.0f-(float)(j+1)/vSegs+shiftPos;
         }
     }
 
@@ -213,6 +214,17 @@ void TriangleSoup::print() {
     }
 }
 
+/* Get Centre position for TriangleSoup sphere */
+glm::vec3 TriangleSoup::getCentrePos() {
+    int centre = (nVerts-1)/2+1;    // 121-1/2 = 60, 60+1=61 <== Mitten
+    float xC = vertexArray[8*centre];
+    float yC = vertexArray[8*centre+1];
+    float zC = vertexArray[8*centre+2];
+    //printf("xC yC zC : %8.2f %8.2f %8.2f\n", xC, yC, zC);
+    return glm::vec3(xC, yC, zC);
+
+}
+
 /* Print information about a TriangleSoup object (stats and extents) */
 void TriangleSoup::printInfo() {
     int i;
@@ -228,7 +240,7 @@ void TriangleSoup::printInfo() {
         x = vertexArray[8*i];
         y = vertexArray[8*i+1];
         z = vertexArray[8*i+2];
-        printf("x y z : %8.2f %8.2f %8.2f\n", x, y, z);
+        //printf("x y z : %8.2f %8.2f %8.2f\n", x, y, z);
         if(x<xmin) xmin = x;
         if(x>xmax) xmax = x;
         if(y<ymin) ymin = y;

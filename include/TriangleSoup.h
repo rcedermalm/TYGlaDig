@@ -45,6 +45,9 @@ public:
     // Print data from TriangleSoup object
     void print();
 
+    // Get center position of sphere
+    glm::vec3 getCentrePos();
+
     // Print information about a TriangleSoup object
     void printInfo();
 
