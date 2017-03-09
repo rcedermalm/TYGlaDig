@@ -33,7 +33,7 @@ GLfloat deltaTime = 0.0f;	// Time between current frame and last frame
 GLfloat lastFrame = 0.0f;  	// Time of last frame
 
 // Camera variables
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+Camera camera(glm::vec3(1.5f, -0.5f, 1.5f));
 GLfloat lastX = 400, lastY = 300;
 bool firstMouse = true;
 
