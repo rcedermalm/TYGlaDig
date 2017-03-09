@@ -73,7 +73,7 @@ int main()
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
     // Create a GLFWwindow object that we can use for GLFW's functions
-    GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "LearnOpenGL", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "TYGla dig", NULL, NULL);
 
     if (window == nullptr){
         std::cout << "Failed to create GLFW window" << std::endl;
@@ -83,7 +83,7 @@ int main()
     glfwMakeContextCurrent(window);
 
     // GLFW Options
-    //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     // Set this to true so GLEW knows to use a modern approach to retrieving function pointers and extensions
     glewExperimental = GL_TRUE;
@@ -120,9 +120,9 @@ int main()
 
     float heightCounter = 5.0f;
     for(GLuint i = 0; i < clothHeight; i++ ){
-        float widthCounter = -3.0f;
+        float widthCounter = -5.0f;
         for(GLuint j = 0; j < clothWidth; j++){
-            theParticles[i][j] = Particle(m, glm::vec3(widthCounter*L0, heightCounter*L0, 0.0f));
+            theParticles[i][j] = Particle(m, glm::vec3(widthCounter*L0,0.0f, heightCounter*L0));
             if(i == 0 & j == 0 || i == 0 & j == (clothHeight - 1) ) {
                 theParticles[i][j].makeStationary();
             }
@@ -131,85 +131,25 @@ int main()
         heightCounter--;
     }
 
-    //Just to move the particle in the right-bottom corner a bit more to the right and down so that the fabric moves
-    theParticles[clothHeight-1][clothWidth-1].setPos(theParticles[clothHeight-1][clothWidth-1].getPos() + glm::vec3(0.07f, -0.07f, 0.0f));
+    GLuint indices[(clothHeight-1)*(clothWidth-1)*6];
+    int counter = 0;
 
-    // Create a grid with the positions in the beginning and initialize a grid for
-    // calculating the new positions (calculations for that one are made in the render loop)
-    glm::vec3 cubePositions[clothHeight][clothWidth];
-    glm::vec3 newCubePositions[clothHeight][clothWidth];
-    for(GLuint i = 0; i < clothHeight; i++){
-        for(GLuint j = 0; j < clothWidth; j++){
-            cubePositions[i][j] = theParticles[i][j].getPos();
-            newCubePositions[i][j] = glm::vec3(0.0f, 0.0f, 0.0f);
+    for(GLuint i = 0; i < clothHeight-1; i++){
+        for(GLuint j = 0; j < clothWidth-1; j++){
+            indices[counter++] = i * clothWidth + j;
+            indices[counter++] = i * clothWidth + 1 + j;
+            indices[counter++] = i * clothWidth + clothWidth + j;
+            indices[counter++] = i * clothWidth + 1 + j;
+            indices[counter++] = i * clothWidth + clothWidth + 1 + j;
+            indices[counter++] = i * clothWidth + clothWidth + j;
         }
     }
 
-    // Create a cube
-    GLfloat vertices[] = {
-            -0.01f, -0.01f, -0.01f,  1.0f, 1.0f, 1.0f,
-             0.01f, -0.01f, -0.01f,  1.0f, 1.0f, 1.0f,
-             0.01f,  0.01f, -0.01f,  1.0f, 1.0f, 1.0f,
-             0.01f,  0.01f, -0.01f,  1.0f, 1.0f, 1.0f,
-            -0.01f,  0.01f, -0.01f,  1.0f, 1.0f, 1.0f,
-            -0.01f, -0.01f, -0.01f,  1.0f, 1.0f, 1.0f,
-
-            -0.01f, -0.01f,  0.01f,  1.0f, 1.0f, 1.0f,
-             0.01f, -0.01f,  0.01f,  1.0f, 1.0f, 1.0f,
-             0.01f,  0.01f,  0.01f,  1.0f, 1.0f, 1.0f,
-             0.01f,  0.01f,  0.01f,  1.0f, 1.0f, 1.0f,
-            -0.01f,  0.01f,  0.01f,  1.0f, 1.0f, 1.0f,
-            -0.01f, -0.01f,  0.01f,  1.0f, 1.0f, 1.0f,
-
-            -0.01f,  0.01f,  0.01f,  1.0f, 1.0f, 1.0f,
-            -0.01f,  0.01f, -0.01f,  1.0f, 1.0f, 1.0f,
-            -0.01f, -0.01f, -0.01f,  1.0f, 1.0f, 1.0f,
-            -0.01f, -0.01f, -0.01f,  1.0f, 1.0f, 1.0f,
-            -0.01f, -0.01f,  0.01f,  1.0f, 1.0f, 1.0f,
-            -0.01f,  0.01f,  0.01f,  1.0f, 1.0f, 1.0f,
-
-             0.01f,  0.01f,  0.01f,  1.0f, 1.0f, 1.0f,
-             0.01f,  0.01f, -0.01f,  1.0f, 1.0f, 1.0f,
-             0.01f, -0.01f, -0.01f,  1.0f, 1.0f, 1.0f,
-             0.01f, -0.01f, -0.01f,  1.0f, 1.0f, 1.0f,
-             0.01f, -0.01f,  0.01f,  1.0f, 1.0f, 1.0f,
-             0.01f,  0.01f,  0.01f,  1.0f, 1.0f, 1.0f,
-
-            -0.01f, -0.01f, -0.01f,  1.0f, 1.0f, 1.0f,
-             0.01f, -0.01f, -0.01f,  1.0f, 1.0f, 1.0f,
-             0.01f, -0.01f,  0.01f,  1.0f, 1.0f, 1.0f,
-             0.01f, -0.01f,  0.01f,  1.0f, 1.0f, 1.0f,
-            -0.01f, -0.01f,  0.01f,  1.0f, 1.0f, 1.0f,
-            -0.01f, -0.01f, -0.01f,  1.0f, 1.0f, 1.0f,
-
-            -0.01f,  0.01f, -0.01f,  1.0f, 1.0f, 1.0f,
-             0.01f,  0.01f, -0.01f,  1.0f, 1.0f, 1.0f,
-             0.01f,  0.01f,  0.01f,  1.0f, 1.0f, 1.0f,
-             0.01f,  0.01f,  0.01f,  1.0f, 1.0f, 1.0f,
-            -0.01f,  0.01f,  0.01f,  1.0f, 1.0f, 1.0f,
-            -0.01f,  0.01f, -0.01f,  1.0f, 1.0f, 1.0f,
-    };
-
-    /***************** Vertex Buffer Objects (VBO) ******************/
-    GLuint VBO;
-    glGenBuffers(1, &VBO); // Create Buffer ID
-    glBindBuffer(GL_ARRAY_BUFFER, VBO); // Bind a buffer to the ID
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); // Copies the vertices data into the buffer
-
-    /***************** Vertex Array Objects (VAO) ******************/
-    GLuint VAO;
+    /***************** VAO, VBO and EBO ******************/
+    GLuint EBO, VBO, VAO;
     glGenVertexArrays(1, &VAO);
-    glBindVertexArray(VAO);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0); // Positions
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat))); // Colors
-
-    // Enable all VAOs
-    glEnableVertexAttribArray(0);
-    glEnableVertexAttribArray(1);
-
-    // Unbind VAO
-    glBindVertexArray(0);
+    glGenBuffers(1, &VBO); // Create Buffer IDs
+    glGenBuffers(1, &EBO);
 
     /***************** Shaders ********************/
     // Build and compile the shader program
@@ -219,8 +159,8 @@ int main()
     theShaders();
 
     /**************** Uniform variables **********************/
-    GLint modelLoc = glGetUniformLocation(theShaders, "model");
-
+    GLint viewLoc = glGetUniformLocation(theShaders, "view");
+    GLint projLoc = glGetUniformLocation(theShaders, "projection");
 
     /****************************************************/
     /******************* RENDER LOOP ********************/
@@ -235,6 +175,7 @@ int main()
 
         // Check if any events have been activated (key pressed, mouse moved etc.) and call corresponding response functions
         glfwPollEvents();
+        do_movement();
 
         // Update window size
         glfwGetFramebufferSize(window, &width, &height);
@@ -246,28 +187,37 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
+        // Create camera transformation
+        glm::mat4 view;
+        view = camera.GetViewMatrix();
+        glm::mat4 projection;
+        projection = glm::perspective(camera.Zoom, (float)WIDTH/(float)HEIGHT, 0.1f, 1000.0f);
+
+        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+        glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
+
+        // The state of the left mouse button (checks later if it's pressed or not
+        int state = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
+
         /**************** RENDER STUFF ****************/
 
-        glm::vec3 gravity = glm::vec3(0.0f, -0.00098f, 0.0f);
+        glm::vec3 gravity = glm::vec3(0.0f, -0.00098f*2, 0.0f);
 
         // Calculate the forces acting on the particles
         for(GLuint i = 0; i < clothHeight; i++){
             for(GLuint j = 0; j < clothWidth; j++){
 
-                /** Kanske implementera att koden innanför for-loopen körs på GPU:n så att allt går fortare, kolla upp
-                 * OpenCL. Kan dock bli överkurs, möjligt att det bara räcker att sitta på en stationär dator.
-                 */
                 glm::vec3 theForce = glm::vec3(0.0f, 0.0f, 0.0f);
 
-                // Structural springs and dampers
-                if(j!=clothWidth-1){theForce += theSpringForce(theParticles[i][j], theParticles[i][j+1], L0, k);
-                    theForce += (-1.0f) * theDampForce(theParticles[i][j], theParticles[i][j+1], b);}
-                if(i!=0){ theForce += theSpringForce(theParticles[i][j], theParticles[i-1][j], L0, k);
-                    theForce += (-1.0f) * theDampForce(theParticles[i][j], theParticles[i-1][j], b);}
-                if(j!=0){ theForce += (-1.0f) * theSpringForce(theParticles[i][j-1], theParticles[i][j], L0, k);
-                    theForce += theDampForce(theParticles[i][j-1], theParticles[i][j], b);}
-                if(i!=clothHeight-1){ theForce += (-1.0f) * theSpringForce(theParticles[i+1][j], theParticles[i][j], L0, k);
-                    theForce += theDampForce(theParticles[i+1][j], theParticles[i][j], b);}
+                // Bend springs and dampers
+                if(j<clothWidth-2){ theForce += theSpringForce(theParticles[i][j], theParticles[i][j+2], (2.0f)*L0, k);
+                    theForce += (-1.0f) * theDampForce(theParticles[i][j], theParticles[i][j+2], b);}
+                if(i>=2){ theForce += theSpringForce(theParticles[i][j], theParticles[i-2][j], (2.0f)*L0, k);
+                    theForce += (-1.0f) * theDampForce(theParticles[i][j], theParticles[i-2][j], b);}
+                if(j>=2){ theForce += (-1.0f) * theSpringForce(theParticles[i][j-2], theParticles[i][j], (2.0f)*L0, k);
+                    theForce += theDampForce(theParticles[i][j-2], theParticles[i][j], b);}
+                if(i<clothHeight-2){ theForce += (-1.0f) * theSpringForce(theParticles[i+2][j], theParticles[i][j], (2.0f)*L0, k);
+                    theForce += theDampForce(theParticles[i+2][j], theParticles[i][j], b);}
 
                 // Shear springs and dampers
                 if(i!=0 && j!=clothWidth-1){ theForce += theSpringForce(theParticles[i][j], theParticles[i-1][j+1], L0cross, k);
@@ -279,15 +229,20 @@ int main()
                 if(i!= clothHeight-1 && j!=clothWidth-1){ theForce += (-1.0f) * theSpringForce(theParticles[i+1][j+1], theParticles[i][j], L0cross, k);
                     theForce += theDampForce(theParticles[i+1][j+1], theParticles[i][j], b);}
 
-                // Bend springs and dampers
-                if(j<clothWidth-2){ theForce += theSpringForce(theParticles[i][j], theParticles[i][j+2], (2.0f)*L0, k);
-                    theForce += (-1.0f) * theDampForce(theParticles[i][j], theParticles[i][j+2], b);}
-                if(i>2){ theForce += theSpringForce(theParticles[i][j], theParticles[i-2][j], (2.0f)*L0, k);
-                    theForce += (-1.0f) * theDampForce(theParticles[i][j], theParticles[i-2][j], b);}
-                if(j>2){ theForce += (-1.0f) * theSpringForce(theParticles[i][j-2], theParticles[i][j], (2.0f)*L0, k);
-                    theForce += theDampForce(theParticles[i][j-2], theParticles[i][j], b);}
-                if(i<clothHeight-2){ theForce += (-1.0f) * theSpringForce(theParticles[i+2][j], theParticles[i][j], (2.0f)*L0, k);
-                    theForce += theDampForce(theParticles[i+2][j], theParticles[i][j], b);}
+
+                // Structural springs and dampers
+                if(j!=clothWidth-1){theForce += theSpringForce(theParticles[i][j], theParticles[i][j+1], L0, k);
+                    theForce += (-1.0f) * theDampForce(theParticles[i][j],theParticles[i][j+1], b);}
+                if(i!=0){ theForce += theSpringForce(theParticles[i][j], theParticles[i-1][j], L0, k);
+                    theForce += (-1.0f) * theDampForce(theParticles[i][j], theParticles[i-1][j], b);}
+                if(j!=0){ theForce += (-1.0f) * theSpringForce(theParticles[i][j-1], theParticles[i][j], L0, k);
+                    theForce += theDampForce(theParticles[i][j-1], theParticles[i][j], b);}
+                if(i!=clothHeight-1){ theForce += (-1.0f) * theSpringForce(theParticles[i+1][j], theParticles[i][j], L0, k);
+                    theForce += theDampForce(theParticles[i+1][j], theParticles[i][j], b);}
+
+                if (state == GLFW_PRESS && (i == (clothHeight/2)-1) && (j == (clothWidth/2)-1)){
+                    theForce += (glm::vec3(0.0f, 0.0f, 0.7f));
+                }
 
                 // Add gravity
                 theForce += gravity;
@@ -297,38 +252,43 @@ int main()
             }
         }
 
-        /** Implementera så att partiklarna i de översta hörnen ([0][0] & [0][clothWidth-1]) sitter fast i två
-         * "krokar" (statiska partiklar som inte kan röra sig) om vi tänker oss att tyget ska hängas upp.
-         * Annars behövs det ej.
-         */
+        GLfloat line_vertices[6*clothHeight*clothWidth];
+        GLuint counter = 0;
 
-        // Draw cubes
-        glBindVertexArray(VAO);  // Bind VAO
-        for(GLuint i = 0; i < clothHeight; i++) {
-            for(GLuint j = 0; j < clothWidth;j++) {
+        for(GLuint i = 0; i < clothHeight; i++){
+            for(GLuint j = 0; j < clothWidth; j++){
                 if (!theParticles[i][j].isStationary()) {
                     // Set the new positions and velocities of the particles
                     theParticles[i][j].setPos(RungeKuttaForPosDiff(theParticles[i][j], h) + theParticles[i][j].getPos());
-                    newCubePositions[i][j] += RungeKuttaForPosDiff(theParticles[i][j], h);
                     theParticles[i][j].setVel(RungeKuttaForVel(theParticles[i][j], h));
                 }
 
-                // Calculate the model matrix for each object and pass it to shader before drawing
-                glm::mat4 model;
-                model = glm::translate(model, cubePositions[i][j]);
-                glm::vec3 theTransVec = (newCubePositions[i][j]);
-                model = glm::translate(model, theTransVec);
-                glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-
-                /** Kolla upp om det går att rendera linjer mellan varje partikel så att det blir mer tydligt hur tyget
-                 *  rör sig. Kolla även upp om det är möjligt att rendera så att tomrummen fylls, aka att det faktiskt
-                 *  ser ut som ett tyg och inte ett gridsystem.
-                 */
-
-                glDrawArrays(GL_TRIANGLES, 0, 36);
+                line_vertices[counter++] = theParticles[i][j].getPos().x;
+                line_vertices[counter++] = theParticles[i][j].getPos().y;
+                line_vertices[counter++] = theParticles[i][j].getPos().z;
+                line_vertices[counter++] = 1.0f;
+                line_vertices[counter++] = 1.0f;
+                line_vertices[counter++] = 1.0f;
             }
         }
-        glBindVertexArray(0); // Unbind VAO
+
+        glBindVertexArray(VAO);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO); // Bind a buffer to the ID
+        glBufferData(GL_ARRAY_BUFFER, sizeof(line_vertices), line_vertices, GL_STREAM_DRAW); // Copies the vertices data into the buffer
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0); // Positions
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat))); // Colors
+
+        // Enable all VAOs
+        glEnableVertexAttribArray(0);
+        glEnableVertexAttribArray(1);
+
+        glDrawElements(GL_TRIANGLES, 6*(clothHeight-1)*(clothWidth-1), GL_UNSIGNED_INT, 0);
+
+        // Unbind VAO
+        glBindVertexArray(0);
 
         // Swap front and back buffers
         glfwSwapBuffers(window);
@@ -337,6 +297,7 @@ int main()
     // Properly de-allocate all resources once they've outlived their purpose
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
+    glDeleteBuffers(1, &EBO);
 
     // Terminate GLFW, clearing any resources allocated by GLFW.
     glfwTerminate();
@@ -348,8 +309,7 @@ int main()
  ******** Function initialisation **********
  *******************************************/
 
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
-{
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode) {
     // When a user presses the escape key, we set the WindowShouldClose property to true,
     // closing the application
     if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
@@ -361,8 +321,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         keys[key] = false;
 }
 
-void mouse_callback(GLFWwindow* window, double xpos, double ypos)
-{
+void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
     if (firstMouse)
     {
         lastX = (GLfloat)xpos;
@@ -370,21 +329,19 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
         firstMouse = false;
     }
 
-    GLfloat xoffset = (GLfloat)(xpos - lastX);
-    GLfloat yoffset = (GLfloat)(lastY - ypos); // Reversed since y-coordinates go from bottom to left
+    GLfloat xoffset = (GLfloat)xpos - lastX;
+    GLfloat yoffset = lastY - (GLfloat)ypos; // Reversed since y-coordinates go from bottom to left
     lastX = (GLfloat)xpos;
     lastY = (GLfloat)ypos;
 
     camera.ProcessMouseMovement(xoffset, yoffset);
 }
 
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
-{
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
     camera.ProcessMouseScroll(yoffset);
 }
 
-void do_movement()
-{
+void do_movement() {
     // Camera controls
     if(keys[GLFW_KEY_W])
         camera.ProcessKeyboard(FORWARD,deltaTime);
@@ -400,6 +357,7 @@ void do_movement()
 glm::vec3 theSpringForce(Particle p1, Particle p2, GLfloat L0, GLfloat k){
     GLfloat lengthBParticles = sqrtf(GLfloat(pow(p2.getPos().x-p1.getPos().x,2) + pow(p2.getPos().y-p1.getPos().y,2) + pow(p2.getPos().z-p1.getPos().z,2)));
     glm::vec3 length = p2.getPos() - p1.getPos();
+
     glm::vec3 Fk = k*(lengthBParticles-L0)*(normalize(length));
     return Fk;
 }
@@ -412,7 +370,6 @@ glm::vec3 theDampForce(Particle p1, Particle p2, GLfloat b){
 
 // Calculate the new velocity using RK4
 glm::vec3 RungeKuttaForVel(Particle p, GLfloat h){
-
     glm::vec3 next, k1, k2, k3, k4;
 
     k1 = p.getAcc();
