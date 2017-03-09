@@ -212,9 +212,9 @@ int main()
                 // Bend springs and dampers
                 if(j<clothWidth-2){ theForce += theSpringForce(theParticles[i][j], theParticles[i][j+2], (2.0f)*L0, k);
                     theForce += (-1.0f) * theDampForce(theParticles[i][j], theParticles[i][j+2], b);}
-                if(i>2){ theForce += theSpringForce(theParticles[i][j], theParticles[i-2][j], (2.0f)*L0, k);
+                if(i>=2){ theForce += theSpringForce(theParticles[i][j], theParticles[i-2][j], (2.0f)*L0, k);
                     theForce += (-1.0f) * theDampForce(theParticles[i][j], theParticles[i-2][j], b);}
-                if(j>2){ theForce += (-1.0f) * theSpringForce(theParticles[i][j-2], theParticles[i][j], (2.0f)*L0, k);
+                if(j>=2){ theForce += (-1.0f) * theSpringForce(theParticles[i][j-2], theParticles[i][j], (2.0f)*L0, k);
                     theForce += theDampForce(theParticles[i][j-2], theParticles[i][j], b);}
                 if(i<clothHeight-2){ theForce += (-1.0f) * theSpringForce(theParticles[i+2][j], theParticles[i][j], (2.0f)*L0, k);
                     theForce += theDampForce(theParticles[i+2][j], theParticles[i][j], b);}
@@ -271,8 +271,6 @@ int main()
                 line_vertices[counter++] = 1.0f;
             }
         }
-
-        std::cout << line_vertices[0] << std::endl;
 
         glBindVertexArray(VAO);
         glBindBuffer(GL_ARRAY_BUFFER, VBO); // Bind a buffer to the ID
