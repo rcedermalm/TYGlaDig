@@ -40,19 +40,21 @@ typedef struct {
  *******************************************/
 
 // Window dimensions
-const GLuint WIDTH = 800, HEIGHT = 800;
+const GLuint WIDTH = 1000, HEIGHT = 600;
 
 // Time variables
 GLfloat deltaTime = 0.0f;	// Time between current frame and last frame
 GLfloat lastFrame = 0.0f;  	// Time of last frame
 
 // Camera variables
-Camera camera(glm::vec3(1.5f, -0.5f, 1.5f));
+//Camera camera(glm::vec3(1.5f, -0.5f, 1.5f));
+Camera camera(glm::vec3(1.2f, -0.5f, 1.45f));
 GLfloat lastX = 400, lastY = 300;
 bool firstMouse = true;
 
 // Stores key information if the key is pressed or not
 bool keys[1024];
+bool run = false;
 
 /*******************************************
  ******     FUNCTION DECLARATIONS      *****
@@ -175,7 +177,7 @@ int main()
     ball.createSphere(ballRadius, ballSegments);
     ball.printInfo();
 
-    /***************** VAO, VBO and EBO ******************/
+    /***** Initialization of VAO, VBO and EBO *****/
     GLuint EBO, VBO, VAO;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO); // Create Buffer IDs
@@ -213,7 +215,7 @@ int main()
         glEnable(GL_DEPTH_TEST);
 
         // OpenGL settings
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
@@ -230,110 +232,138 @@ int main()
         int state = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
 
         /**************** RENDER STUFF ****************/
+        if(run) {
+            glm::vec3 gravity = glm::vec3(0.0f, -0.00098f * 2, 0.0f);
 
-        glm::vec3 gravity = glm::vec3(0.0f, -0.00098f*2, 0.0f);
+            // Calculate the forces acting on the particles
+            for (GLuint i = 0; i < clothHeight; i++) {
+                for (GLuint j = 0; j < clothWidth; j++) {
 
-        // Calculate the forces acting on the particles
-        for(GLuint i = 0; i < clothHeight; i++){
-            for(GLuint j = 0; j < clothWidth; j++){
+                    glm::vec3 theForce = glm::vec3(0.0f, 0.0f, 0.0f);
 
-                // Resolve collision with ball
-                ballCollision(theParticles[i][j], ball.getCentrePos(), ballRadius);
-                glm::vec3 theForce = glm::vec3(0.0f, 0.0f, 0.0f);
+                    // Bend springs and dampers
+                    if (j < clothWidth - 2) {
+                        theForce += theSpringForce(theParticles[i][j], theParticles[i][j + 2], (2.0f) * L0, k);
+                        theForce += (-1.0f) * theDampForce(theParticles[i][j], theParticles[i][j + 2], b);
+                    }
+                    if (i >= 2) {
+                        theForce += theSpringForce(theParticles[i][j], theParticles[i - 2][j], (2.0f) * L0, k);
+                        theForce += (-1.0f) * theDampForce(theParticles[i][j], theParticles[i - 2][j], b);
+                    }
+                    if (j >= 2) {
+                        theForce +=
+                                (-1.0f) * theSpringForce(theParticles[i][j - 2], theParticles[i][j], (2.0f) * L0, k);
+                        theForce += theDampForce(theParticles[i][j - 2], theParticles[i][j], b);
+                    }
+                    if (i < clothHeight - 2) {
+                        theForce +=
+                                (-1.0f) * theSpringForce(theParticles[i + 2][j], theParticles[i][j], (2.0f) * L0, k);
+                        theForce += theDampForce(theParticles[i + 2][j], theParticles[i][j], b);
+                    }
 
-                // Bend springs and dampers
-                if(j<clothWidth-2){ theForce += theSpringForce(theParticles[i][j], theParticles[i][j+2], (2.0f)*L0, k);
-                    theForce += (-1.0f) * theDampForce(theParticles[i][j], theParticles[i][j+2], b);}
-                if(i>=2){ theForce += theSpringForce(theParticles[i][j], theParticles[i-2][j], (2.0f)*L0, k);
-                    theForce += (-1.0f) * theDampForce(theParticles[i][j], theParticles[i-2][j], b);}
-                if(j>=2){ theForce += (-1.0f) * theSpringForce(theParticles[i][j-2], theParticles[i][j], (2.0f)*L0, k);
-                    theForce += theDampForce(theParticles[i][j-2], theParticles[i][j], b);}
-                if(i<clothHeight-2){ theForce += (-1.0f) * theSpringForce(theParticles[i+2][j], theParticles[i][j], (2.0f)*L0, k);
-                    theForce += theDampForce(theParticles[i+2][j], theParticles[i][j], b);}
+                    // Shear springs and dampers
+                    if (i != 0 && j != clothWidth - 1) {
+                        theForce += theSpringForce(theParticles[i][j], theParticles[i - 1][j + 1], L0cross, k);
+                        theForce += (-1.0f) * theDampForce(theParticles[i][j], theParticles[i - 1][j + 1], b);
+                    }
+                    if (i != 0 && j != 0) {
+                        theForce += theSpringForce(theParticles[i][j], theParticles[i - 1][j - 1], L0cross, k);
+                        theForce += (-1.0f) * theDampForce(theParticles[i][j], theParticles[i - 1][j - 1], b);
+                    }
+                    if (i != clothHeight - 1 && j != 0) {
+                        theForce +=
+                                (-1.0f) * theSpringForce(theParticles[i + 1][j - 1], theParticles[i][j], L0cross, k);
+                        theForce += theDampForce(theParticles[i + 1][j - 1], theParticles[i][j], b);
+                    }
+                    if (i != clothHeight - 1 && j != clothWidth - 1) {
+                        theForce +=
+                                (-1.0f) * theSpringForce(theParticles[i + 1][j + 1], theParticles[i][j], L0cross, k);
+                        theForce += theDampForce(theParticles[i + 1][j + 1], theParticles[i][j], b);
+                    }
 
-                // Shear springs and dampers
-                if(i!=0 && j!=clothWidth-1){ theForce += theSpringForce(theParticles[i][j], theParticles[i-1][j+1], L0cross, k);
-                    theForce += (-1.0f) * theDampForce(theParticles[i][j], theParticles[i-1][j+1], b);}
-                if(i!=0 && j!=0){ theForce += theSpringForce(theParticles[i][j], theParticles[i-1][j-1], L0cross, k);
-                    theForce += (-1.0f) * theDampForce(theParticles[i][j], theParticles[i-1][j-1], b);}
-                if(i!= clothHeight-1 && j!= 0){ theForce += (-1.0f) * theSpringForce(theParticles[i+1][j-1], theParticles[i][j], L0cross, k);
-                    theForce += theDampForce(theParticles[i+1][j-1], theParticles[i][j], b);}
-                if(i!= clothHeight-1 && j!=clothWidth-1){ theForce += (-1.0f) * theSpringForce(theParticles[i+1][j+1], theParticles[i][j], L0cross, k);
-                    theForce += theDampForce(theParticles[i+1][j+1], theParticles[i][j], b);}
 
+                    // Structural springs and dampers
+                    if (j != clothWidth - 1) {
+                        theForce += theSpringForce(theParticles[i][j], theParticles[i][j + 1], L0, k);
+                        theForce += (-1.0f) * theDampForce(theParticles[i][j], theParticles[i][j + 1], b);
+                    }
+                    if (i != 0) {
+                        theForce += theSpringForce(theParticles[i][j], theParticles[i - 1][j], L0, k);
+                        theForce += (-1.0f) * theDampForce(theParticles[i][j], theParticles[i - 1][j], b);
+                    }
+                    if (j != 0) {
+                        theForce += (-1.0f) * theSpringForce(theParticles[i][j - 1], theParticles[i][j], L0, k);
+                        theForce += theDampForce(theParticles[i][j - 1], theParticles[i][j], b);
+                    }
+                    if (i != clothHeight - 1) {
+                        theForce += (-1.0f) * theSpringForce(theParticles[i + 1][j], theParticles[i][j], L0, k);
+                        theForce += theDampForce(theParticles[i + 1][j], theParticles[i][j], b);
+                    }
 
-                // Structural springs and dampers
-                if(j!=clothWidth-1){theForce += theSpringForce(theParticles[i][j], theParticles[i][j+1], L0, k);
-                    theForce += (-1.0f) * theDampForce(theParticles[i][j],theParticles[i][j+1], b);}
-                if(i!=0){ theForce += theSpringForce(theParticles[i][j], theParticles[i-1][j], L0, k);
-                    theForce += (-1.0f) * theDampForce(theParticles[i][j], theParticles[i-1][j], b);}
-                if(j!=0){ theForce += (-1.0f) * theSpringForce(theParticles[i][j-1], theParticles[i][j], L0, k);
-                    theForce += theDampForce(theParticles[i][j-1], theParticles[i][j], b);}
-                if(i!=clothHeight-1){ theForce += (-1.0f) * theSpringForce(theParticles[i+1][j], theParticles[i][j], L0, k);
-                    theForce += theDampForce(theParticles[i+1][j], theParticles[i][j], b);}
+                    if (state == GLFW_PRESS && (i == (clothHeight / 2) - 1) && (j == (clothWidth / 2) - 1)) {
+                        theForce += (glm::vec3(0.0f, 0.0f, 0.4f));
+                    }
 
-                if (state == GLFW_PRESS && (i == (clothHeight/2)-1) && (j == (clothWidth/2)-1)){
-                    theForce += (glm::vec3(0.0f, 0.0f, 0.7f));
+                    // Add gravity
+                    theForce += gravity;
+
+                    // Set the current acceleration of the particle
+                    theParticles[i][j].setAcc((1 / m) * (theForce));
+
+                    /*
+                    // Resolve collision with ball
+                    //ball.getCentrePos();
+                    ballCollision(theParticles[i][j], ball.getCentrePos(), ballRadius);
+                    */
                 }
-
-                // Add gravity
-                theForce += gravity;
-
-                // Set the current acceleration of the particle
-                theParticles[i][j].setAcc((1/m)*(theForce));
-
-                /*
-                // Resolve collision with ball
-                //ball.getCentrePos();
-                ballCollision(theParticles[i][j], ball.getCentrePos(), ballRadius);
-                 */
             }
-        }
 
-        GLfloat line_vertices[6*clothHeight*clothWidth];
-        GLuint counter = 0;
+            GLfloat line_vertices[6 * clothHeight * clothWidth];
+            GLuint counter = 0;
 
-        for(GLuint i = 0; i < clothHeight; i++){
-            for(GLuint j = 0; j < clothWidth; j++){
+            for (GLuint i = 0; i < clothHeight; i++) {
+                for (GLuint j = 0; j < clothWidth; j++) {
+                    if (!theParticles[i][j].isStationary()) {
+                        // Set the new positions and velocities of the particles
+                        theParticles[i][j].setPos(
+                                RungeKuttaForPosDiff(theParticles[i][j], h) + theParticles[i][j].getPos());
+                        theParticles[i][j].setVel(RungeKuttaForVel(theParticles[i][j], h));
+                    }
 
-                if (!theParticles[i][j].isStationary()) {
-                    // Set the new positions and velocities of the particles
-                    theParticles[i][j].setPos(RungeKuttaForPosDiff(theParticles[i][j], h) + theParticles[i][j].getPos());
-                    theParticles[i][j].setVel(RungeKuttaForVel(theParticles[i][j], h));
+                    line_vertices[counter++] = theParticles[i][j].getPos().x;
+                    line_vertices[counter++] = theParticles[i][j].getPos().y;
+                    line_vertices[counter++] = theParticles[i][j].getPos().z;
+                    line_vertices[counter++] = 1.0f;
+                    line_vertices[counter++] = 1.0f;
+                    line_vertices[counter++] = 1.0f;
                 }
-
-                line_vertices[counter++] = theParticles[i][j].getPos().x;
-                line_vertices[counter++] = theParticles[i][j].getPos().y;
-                line_vertices[counter++] = theParticles[i][j].getPos().z;
-                line_vertices[counter++] = 1.0f;
-                line_vertices[counter++] = 1.0f;
-                line_vertices[counter++] = 1.0f;
             }
+
+            ball.render();
+
+            glBindVertexArray(VAO);
+            glBindBuffer(GL_ARRAY_BUFFER, VBO); // Bind a buffer to the ID
+            glBufferData(GL_ARRAY_BUFFER, sizeof(line_vertices), line_vertices,
+                         GL_STREAM_DRAW); // Copies the vertices data into the buffer
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid *) 0); // Positions
+            glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat),
+                                  (GLvoid *) (3 * sizeof(GLfloat))); // Colors
+
+            // Enable all VAOs
+            glEnableVertexAttribArray(0);
+            glEnableVertexAttribArray(1);
+
+            glDrawElements(GL_TRIANGLES, 6 * (clothHeight - 1) * (clothWidth - 1), GL_UNSIGNED_INT, 0);
+
+            // Unbind VAO
+            glBindVertexArray(0);
         }
-
-        /**************************** Draw ball ****************************/
-        ball.render();
-
-        glBindVertexArray(VAO);
-        glBindBuffer(GL_ARRAY_BUFFER, VBO); // Bind a buffer to the ID
-        glBufferData(GL_ARRAY_BUFFER, sizeof(line_vertices), line_vertices, GL_STREAM_DRAW); // Copies the vertices data into the buffer
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0); // Positions
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat))); // Colors
-
-        // Enable all VAOs
-        glEnableVertexAttribArray(0);
-        glEnableVertexAttribArray(1);
-
-        glDrawElements(GL_TRIANGLES, 6*(clothHeight-1)*(clothWidth-1), GL_UNSIGNED_INT, 0);
-
-        // Unbind VAO
-        glBindVertexArray(0);
-
         // Swap front and back buffers
         glfwSwapBuffers(window);
+
     }
 
     // Properly de-allocate all resources once they've outlived their purpose
@@ -356,6 +386,8 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     // closing the application
     if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         glfwSetWindowShouldClose(window, GL_TRUE);
+    if(key == GLFW_KEY_SPACE && action == GLFW_PRESS)
+        run = true;
 
     if(action == GLFW_PRESS)
         keys[key] = true;
