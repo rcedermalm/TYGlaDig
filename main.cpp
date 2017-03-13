@@ -237,6 +237,8 @@ int main()
         for(GLuint i = 0; i < clothHeight; i++){
             for(GLuint j = 0; j < clothWidth; j++){
 
+                // Resolve collision with ball
+                ballCollision(theParticles[i][j], ball.getCentrePos(), ballRadius);
                 glm::vec3 theForce = glm::vec3(0.0f, 0.0f, 0.0f);
 
                 // Bend springs and dampers
@@ -280,9 +282,11 @@ int main()
                 // Set the current acceleration of the particle
                 theParticles[i][j].setAcc((1/m)*(theForce));
 
+                /*
                 // Resolve collision with ball
                 //ball.getCentrePos();
                 ballCollision(theParticles[i][j], ball.getCentrePos(), ballRadius);
+                 */
             }
         }
 
@@ -436,25 +440,78 @@ glm::vec3 normalise(glm::vec3 vector){
 }
 
 // Detect collision between particle and ball
-void ballCollision(Particle particle, const glm::vec3 centre, const float r) {
-    double radius = (double)r;
+void ballCollision(Particle particle, const glm::vec3 centre, const float radius) {
+    //double radius = (double)r;
+    /*
     float collisionX = particle.getPos().x - centre.x;
     float collisionY = particle.getPos().y - centre.y;
     float collisionZ = particle.getPos().z - centre.z;
-    double lengthIntersection = sqrt(pow(collisionX, 2)+pow(collisionY, 2)+pow(collisionZ, 2));
-    glm::vec3 collisionVector = glm::vec3(collisionX, collisionY, collisionZ);
-    //printf("Distance between: %8.2f\n", lengthIntersection);
-    //float lengthIntersection = collisionVector.length();
+    double absColX = abs(collisionX);
+    double absColY = abs(collisionY);
+    double absColZ = abs(collisionZ);
+     */
+    glm::vec3 collisionVector = particle.getPos() - centre;
+    glm::vec3 absColVec = abs(collisionVector);
 
-    //printf("lengthIntersection: %8.2f\n", lengthIntersection);
-    //printf("lengthIntersection: %f\n", lengthIntersection);
+    float newPosX = particle.getPos().x;
+    float newPosY = particle.getPos().y;
+    float newPosZ = particle.getPos().z;
+
+    /*
+    if (absColVec.x <= radius) {
+        newPosX = absColVec.x + (radius - (collisionVector.x));
+    }
+    if (absColVec.y <= radius) {
+        newPosY = absColVec.y + (radius - (collisionVector.y));
+    }
+    if (absColVec.z <= radius) {
+        newPosZ = absColVec.z + (radius - (collisionVector.z));
+    }
+    */
+
+    if (absColVec.x <= radius && absColVec.y <= radius && absColVec.z <= radius) {
+        //printf("Within radius? x y z: %d %d %d\n", (absColVec.x <= radius ), (absColVec.y <= radius ), (absColVec.x <= radius ));
+        //particle.setPos(glm::vec3(newPosX, newPosY, newPosZ));
+        newPosX = particle.getPos().x - radius - collisionVector.x;
+        newPosY = particle.getPos().y - radius - collisionVector.y;
+        newPosZ = particle.getPos().z - radius - collisionVector.z;
+    }
+
+    printf("\n \nWithin radius? x y z: %d %d %d\n", (absColVec.x <= radius ), (absColVec.y <= radius ), (absColVec.x <= radius ));
+    printf("CollisionVector x y z: %8.2f %8.2f %8.2f\n", collisionVector.x, collisionVector.y, collisionVector.z);
+    printf("BEFORE Particle pos x y z: %8.2f %8.2f %8.2f\n", particle.getPos().x, particle.getPos().y, particle.getPos().z);
+    particle.setPos(glm::vec3(newPosX, newPosY, newPosZ));
+    printf("AFTER Particle pos x y z: %8.2f %8.2f %8.2f\n \n", particle.getPos().x, particle.getPos().y, particle.getPos().z);
+
+    // Ändrar inte position trots att vi sätter den nya positionen... Något blir knas....
+}
+
+
+
+
+//double lengthIntersection = sqrt(pow(collisionX, 2) + pow(collisionY, 2) + pow(collisionZ, 2));
+//glm::vec3 collisionVector = glm::vec3(collisionX, collisionY, collisionZ);
+//printf("Distance between: %8.2f\n", lengthIntersection);
+//float lengthIntersection = collisionVector.length();
+//printf("ParticlePos x y z : %8.2f %8.2f %8.2f\n", particle.getPos().x, particle.getPos().y, particle.getPos().z);
+//printf("CentrePos x y z : %8.2f %8.2f %8.2f\n", centre.x, centre.y, centre.z);
+//printf("radius: %8.2f \n", radius);
+//printf("lengthIntersection: %8.2f\n", lengthIntersection);
+//printf("lengthIntersection: %f\n", lengthIntersection);
+
+
     // If particle is inside the ball
+    /*
     if ( lengthIntersection <= radius) {
-        printf("Within radius: %d\n", lengthIntersection < radius);
         // Project the particle to the surface of the ball
         glm::vec3 normColVec = normalise(collisionVector);
-        printf("collisionVector x y z : %8.2f %8.2f %8.2f\n", collisionVector.x, collisionVector.y, collisionVector.z);
-        //printf("normColVec x y z : %8.2f %8.2f %8.2f\n", normColVec.x, normColVec.y, normColVec.z);
+
         particle.setPos(glm::vec3(collisionVector.x*(radius - lengthIntersection), collisionVector.y*(radius - lengthIntersection), collisionVector.z*(radius - lengthIntersection)));
     }
-}
+     */
+    /*
+    if (distance == 0.0) {
+        collisionVector = glm::vec3(0.0, 0.0, 0.0);
+        distance = 1.0;
+    }
+     */
